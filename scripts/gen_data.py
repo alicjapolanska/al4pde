@@ -1,7 +1,8 @@
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
-
+import wandb
+wandb.init(mode="offline")
 
 def generate_data(task, path, num_batches, al_iter_id, batch_size):
     os.makedirs(path, exist_ok=True)

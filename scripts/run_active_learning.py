@@ -1,9 +1,13 @@
+import sys
+import os
+sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import shutil
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import wandb
-import os
-os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".10"
+wandb.init(mode="offline")
+os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".03"
 import torch
 import jax.numpy as jnp
 jnp.arange(0, 100)
