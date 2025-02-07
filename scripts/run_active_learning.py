@@ -7,7 +7,7 @@ import hydra
 from omegaconf import OmegaConf, DictConfig
 import wandb
 wandb.init(mode="offline")
-os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".03"
+os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".1"
 import torch
 import jax.numpy as jnp
 jnp.arange(0, 100)
