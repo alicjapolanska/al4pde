@@ -6,6 +6,7 @@ num_rollout_steps_rel: 1.0
 pred_batch_size: 200
 predict_train: true
 use_latent_space: false
+sketch_size: 512
 
 selection:
   _target_: bmdal_reg.bmdal.selection.MaxDistSelectionMethod
