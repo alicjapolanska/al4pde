@@ -74,3 +74,7 @@ class PREModel(ProbModel):
 
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
+
+
+def build_PREModel(task, cfg):
+    return PREModel(task,  cfg.model_wrapper)
