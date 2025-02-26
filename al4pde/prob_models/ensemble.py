@@ -143,7 +143,7 @@ class Ensemble(ProbModel):
 
     def _roll_out_all(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
         b_m_out = [b.roll_out(xx, grid, final_step, pde_param, t_idx, return_features) for b in self.base_models]
-        print("Shape of rolled out trajectory for first model is:", b_m_out[0].shape)
+
         if return_features:
             traj = torch.stack([o[0] for o in b_m_out], dim=0)
             feat = torch.concat([o[1] for o in b_m_out], dim=-1)
