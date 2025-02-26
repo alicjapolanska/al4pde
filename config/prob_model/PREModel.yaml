@@ -1,0 +1,11 @@
+# prob_model/PREModel.yaml
+defaults:
+  - base  # Inherit everything from base.yml
+
+_target_: al4pde.prob_models.PRE_model.PREModel
+
+# Remove ensemble-specific parameters (so they are not passed to PREModel)
+num_models_ensemble: null
+unc_roll_out_mode: null
+synchronized_training: null
+first_model_prediction: null
