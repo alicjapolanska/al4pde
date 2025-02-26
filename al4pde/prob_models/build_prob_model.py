@@ -5,6 +5,6 @@ def build_prob_model(task, cfg):
     if cfg._target_ == "al4pde.prob_models.ensemble.Ensemble":
         return build_ensemble(task, cfg)
     if cfg._target_ == "al4pde.prob_models.PRE_model.PREModel":
-        return build_PREModel(task, cfg.model)
+        return build_PREModel(task, cfg.model_wrapper)
     else:
         raise ValueError(f"Unknown prob_model target: {cfg._target_}")
