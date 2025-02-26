@@ -2,6 +2,8 @@ from al4pde.prob_models.ensemble import build_ensemble
 from al4pde.prob_models.PRE_model import build_PREModel
 
 def build_prob_model(task, cfg):
+    print("DEBUG: cfg.prob_model =", cfg, flush=True)
+    
     if cfg._target_ == "al4pde.prob_models.ensemble.Ensemble":
         return build_ensemble(task, cfg)
     if cfg._target_ == "al4pde.prob_models.PRE_model.PREModel":
