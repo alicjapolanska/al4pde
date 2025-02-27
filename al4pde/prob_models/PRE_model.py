@@ -47,6 +47,18 @@ class PREModel(ProbModel):
             return res
         else: 
             return res[...,1:-1,1:-1]
+        
+    @property
+    def val_loader(self):
+        return self.model.val_loader
+
+    @property
+    def train_loader(self):
+        return self.model.train_loader
+
+    @property
+    def train_loader_full_traj(self):
+        return self.model.train_loader_full_traj
     
 
     def train_single_epoch(self, current_epoch, total_epoch, num_epoch):
