@@ -51,6 +51,29 @@ class PREModel(ProbModel):
 
     def train_single_epoch(self, current_epoch, total_epoch, num_epoch):
         self.model.train_single_epoch(current_epoch, total_epoch, num_epoch)
+    
+    def train_n_epoch(self, al_iter: int, num_epoch: int, step_offset: int, vis: bool = True,
+                      prefix: str = "", is_last=False) -> float:
+        """ Train model for num_epoch epochs.
+        @param al_iter: Current AL iteration.
+        @param num_epoch: Number of epochs to train for.
+        @param step_offset: Total epoch added up over all AL iterations.
+        @param vis: Whether to visualize.
+        @param prefix: Will be put before the name of all logged metrics.
+        @return: Training duration in seconds.
+        """
+        total_time = 0
+        self.model.init_training(al_iter) #Basically the same as the one in model but it's self.model.init_training
+        for i in range(num_epoch):
+            t = time.time()
+            self.train_single_epoch(i, step_offset + i, num_epoch)
+            total_time += time.time() - t
+            if i % self.val_period == 0:
+                self.validate(step_offset + i, prefix=prefix)
+            if vis:
+                if (i > 0 and i % self.vis_period == 0) or i == num_epoch - 1:
+                    self.visualize(step_offset + i)
+        return total_time
 
     def uncertainty(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False, return_state=False):
         
