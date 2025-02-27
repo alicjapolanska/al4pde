@@ -17,7 +17,7 @@ class PREModel(ProbModel):
 
     def __init__(self, task, model_cfg):
         super().__init__(task, model_cfg.training_type, model_cfg.t_train, model_cfg.batch_size, model_cfg.val_period, model_cfg.vis_period, model_cfg.loss)
-        self.model = instantiate(model_cfg.model_wrapper)
+        self.model = instantiate(model_cfg)
         self.stats.append(UncAvg("unc")) 
         self.stats.append(LossUncCorr("corr_unc_loss", self.loss))
     
