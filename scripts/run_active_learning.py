@@ -50,6 +50,9 @@ def main(cfg: DictConfig):
     task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
     acq_strat = build_strategy(task, cfg.acquisition)
     print("acq", acq_strat, flush=True)
+    print("Prob model cfg", cfg.prob_model)
+    cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
+    print("Prob model cfg", cfg.prob_model)
     prob_model = build_prob_model(task, cfg.prob_model)
 
     if cfg.wandb.name is None:
