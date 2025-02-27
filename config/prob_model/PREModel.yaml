@@ -7,6 +7,8 @@ scheduler:
   _target_: pdearena.lr_scheduler.LinearWarmupCosineAnnealingLR
   optimizer: ${..optimizer}
 
+debug: ${..optimizer}
+
 # Remove ensemble-specific parameters (so they are not passed to PREModel)
 num_models_ensemble: null
 unc_roll_out_mode: null
