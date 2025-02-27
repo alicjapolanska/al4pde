@@ -11,11 +11,10 @@ first_model_prediction: null
 
 scheduler:
   _target_: pdearena.lr_scheduler.LinearWarmupCosineAnnealingLR
-  __args__:
-    - ${prob_model.model_wrapper.optimizer}  # Pass the optimizer as a positional argument
   warmup_epochs: 0
   warmup_start_lr: 1e-08
   eta_min: 1e-05
   max_epochs: '${num_epochs}'
-  
+  optimizer: ${prob_model.model_wrapper.optimizer}  # Directly reference the optimizer in model_wrapper
+
 
