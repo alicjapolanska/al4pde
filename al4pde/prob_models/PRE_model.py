@@ -87,7 +87,7 @@ class PREModel(ProbModel):
                     self.visualize(step_offset + i)
         return total_time
 
-    def uncertainty(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False, return_state=False):
+    def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False, return_features=False, final_step = 21):
         
         pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
         unc = self.residual(pred)
