@@ -1,6 +1,5 @@
 defaults:
   - base  
-  - model_wrapper: fno
 
 _target_: al4pde.prob_models.PRE_model.PREModel
 
