@@ -88,7 +88,9 @@ class PREModel(ProbModel):
         return total_time
 
     def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False, return_features=False, final_step = 21):
-        
+        print("pde param", pde_param)
+        if pde_param.dim() == 1:
+            pde_param = pde_param.unsqueeze(0)
         pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
         unc = self.residual(pred)
         if return_state:
