@@ -38,9 +38,9 @@ class PREModel(ProbModel):
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
 
         #Defining the required Convolutional Operations. 
-        D_t = ConvOps_1d.ConvOperator(domain='t', order=1)
-        D_x = ConvOps_1d.ConvOperator(domain='x', order=1)
-        D_xx = ConvOps_1d.ConvOperator(domain='x', order=2)
+        D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device='gpu')
+        D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device='gpu')
+        D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device='gpu')
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         if boundary:
