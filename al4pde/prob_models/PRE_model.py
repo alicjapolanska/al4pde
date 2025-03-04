@@ -93,7 +93,7 @@ class PREModel(ProbModel):
         #    pde_param = pde_param.unsqueeze(0)
         #    print("pde param unsqueezed", pde_param, pde_param.shape)
         #pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-    def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False):
+    def uncertainty(self, xx, grid, t_idx=None, pde_param=None, return_state=True):
         pred = self.model(xx, grid, pde_param)
         unc = self.residual(pred)
         if return_state:
