@@ -87,12 +87,14 @@ class PREModel(ProbModel):
                     self.visualize(step_offset + i)
         return total_time
 
-    def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False, return_features=False, final_step = 21):
-        print("pde param", pde_param, pde_param.shape)
-        if pde_param.dim() == 1:
-            pde_param = pde_param.unsqueeze(0)
-            print("pde param unsqueezed", pde_param, pde_param.shape)
-        pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
+    #def uncertainty(self, xx, grid, final_step, pde_param=None, t_idx=None, return_state=False, return_features=False):
+        #print("pde param", pde_param, pde_param.shape)
+        #if pde_param.dim() == 1:
+        #    pde_param = pde_param.unsqueeze(0)
+        #    print("pde param unsqueezed", pde_param, pde_param.shape)
+        #pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
+    def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False):
+        pred = self.model(xx, grid, pde_param)
         unc = self.residual(pred)
         if return_state:
             return pred, unc
