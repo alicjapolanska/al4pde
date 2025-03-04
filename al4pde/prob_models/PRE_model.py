@@ -44,7 +44,7 @@ class PREModel(ProbModel):
         D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
-        print("Residual shape ", res.shape, res)
+        print("Residual shape ", res.shape)
         if boundary:
             return res
         else: 
