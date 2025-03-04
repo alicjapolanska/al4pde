@@ -9,7 +9,7 @@ class ProbModel(Model):
 
     def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
         unc_cell = []
-        if self.training_type in ['autoregressive', 'teacher_forcing',  'teacher_forcing_schedule']:
+        if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
             unc_cell = [torch.zeros_like(xx)]
             for t in range(self.initial_step, final_step):
