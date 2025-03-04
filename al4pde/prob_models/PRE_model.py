@@ -28,19 +28,20 @@ class PREModel(ProbModel):
             boundary - Whether to include boundary in PRE or not
             # TODO Feed in dx and dt from config file
             """
+        device = uu.device  # Get the device of uu (GPU or CPU)
 
-        dx = torch.tensor(dx, dtype=torch.float32)
-        dt = torch.tensor(dt, dtype=torch.float32)
-        nu = torch.tensor(pde_param, dtype=torch.float32)
+        dx = torch.tensor(dx, dtype=torch.float32, device=device)
+        dt = torch.tensor(dt, dtype=torch.float32, device=device)
+        nu = torch.tensor(pde_param, dtype=torch.float32, device=device)
 
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
         uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
 
         #Defining the required Convolutional Operations. 
-        D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device='gpu')
-        D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device='gpu')
-        D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device='gpu')
+        D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
+        D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
+        D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         if boundary:
