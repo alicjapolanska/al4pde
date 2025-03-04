@@ -21,7 +21,7 @@ class PREModel(ProbModel):
         self.stats.append(UncAvg("unc")) 
         self.stats.append(LossUncCorr("corr_unc_loss", self.loss))
     
-    def residual(uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
+    def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
             uu  - tensor containing solution value 
             pde_param - Burgers parameter nu 
