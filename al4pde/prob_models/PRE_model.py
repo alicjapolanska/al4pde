@@ -97,7 +97,7 @@ class PREModel(ProbModel):
         pred = self.model(xx, grid, pde_param)
         print("Pred is ", pred)
         print("shape", pred.shape)
-        unc = self.residual(pred)
+        unc = self.residual(pred, pde_param)
         if return_state:
             return pred, unc
         return unc
