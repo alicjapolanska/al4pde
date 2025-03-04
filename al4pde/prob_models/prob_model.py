@@ -17,7 +17,7 @@ class ProbModel(Model):
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
                 unc_cell.append(unc)
-                print("Uncertainty shape ", unc.shape, unc)
+                print("Uncertainty shape ", unc.shape)
                 if t_idx is not None:
                     t_idx += 1
             return pred, torch.concat(unc_cell, dim=-2)
