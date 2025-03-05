@@ -103,6 +103,27 @@ class PREModel(ProbModel):
             return pred, unc
         return unc
 
+    def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
+        unc_cell = []
+        if self.training_type in ['autoregressive', 'teacher_forcing']:
+            pred = xx
+            res_shape = xx.shape
+            #adjust shape as boundary is removed for residual
+            res_shape[1] -= 2
+            res_shape[2] -= 2
+            unc_cell = [torch.zeros(res_shape)]
+            for t in range(self.initial_step, final_step):
+                m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
+                pred = torch.cat((pred, m), -2)
+                xx = torch.cat((xx[..., 1:, :], m), dim=-2)
+                unc_cell.append(unc)
+                print("Uncertainty shape ", unc.shape)
+                if t_idx is not None:
+                    t_idx += 1
+            return pred, torch.concat(unc_cell, dim=-2)
+
+        else:
+            raise ValueError(self.training_type)
 
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
