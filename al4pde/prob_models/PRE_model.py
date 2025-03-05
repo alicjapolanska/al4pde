@@ -107,7 +107,7 @@ class PREModel(ProbModel):
         unc_cell = []
         if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
-            res_shape = xx.shape
+            res_shape = list(xx.shape)
             #adjust shape as boundary is removed for residual
             res_shape[1] -= 2
             res_shape[2] -= 2
