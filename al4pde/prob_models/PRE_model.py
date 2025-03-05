@@ -110,9 +110,10 @@ class PREModel(ProbModel):
         if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
             res_shape = list(xx.shape)
+            print("pred shape ", res_shape)
             #adjust shape as boundary is removed for residual
-            res_shape[1] -= 2
-            res_shape[2] -= 2
+            #res_shape[1] -= 2
+            #res_shape[2] -= 2
             unc_cell = [torch.zeros(res_shape)]
             for t in range(self.initial_step, final_step):
                 m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
