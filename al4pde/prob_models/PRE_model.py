@@ -45,6 +45,8 @@ class PREModel(ProbModel):
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         #print("Residual shape ", res.shape)
+
+        res = res.permute(0, 2, 1) #permute dimensions back
         if boundary:
             return res.unsqueeze(-1)
         else: 
