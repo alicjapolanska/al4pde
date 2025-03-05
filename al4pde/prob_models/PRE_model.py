@@ -46,9 +46,9 @@ class PREModel(ProbModel):
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         #print("Residual shape ", res.shape)
         if boundary:
-            return res
+            return res.unsqueeze(-1)
         else: 
-            return res[...,1:-1,1:-1]
+            return res[...,1:-1,1:-1].unsqueeze(-1)
         
     @property
     def val_loader(self):
