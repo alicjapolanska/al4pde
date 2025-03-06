@@ -47,9 +47,9 @@ class PREModel(ProbModel):
         #print("Residual shape ", res.shape)
 
         if boundary:
-            return res.unsqueeze(-1).permute(0, 2, 1)
+            return res.permute(0, 2, 1).unsqueeze(-1)
         else: 
-            return res[...,1:-1,1:-1].unsqueeze(-1).permute(0, 2, 1)
+            return res[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
         
     @property
     def val_loader(self):
