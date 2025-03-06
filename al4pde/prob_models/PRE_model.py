@@ -120,10 +120,12 @@ class PREModel(ProbModel):
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
                 unc_cell.append(unc)
-                print("Uncertainty shape ", unc.shape)
                 print("Device of unc ", unc.device)
                 if t_idx is not None:
                     t_idx += 1
+            print("Unc cell shape ", unc_cell.shape)
+            for unc in unc_cell:
+                print(print("Uncertainty shape ", unc.shape))
             return pred, torch.concat(unc_cell, dim=-2)
 
         else:
