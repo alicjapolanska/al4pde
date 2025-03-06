@@ -111,8 +111,8 @@ class PREModel(ProbModel):
             res_shape = list(xx.shape)
             print("pred shape ", res_shape)
             #adjust shape as boundary is removed for residual
+            res_shape[0] -= 2
             res_shape[1] -= 2
-            res_shape[2] -= 2
             unc_cell = [torch.zeros(res_shape, device=xx.device)]
             print("Device of unc ", unc_cell[0].device)
             for t in range(self.initial_step, final_step):
