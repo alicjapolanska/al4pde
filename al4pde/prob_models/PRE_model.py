@@ -79,6 +79,7 @@ class PREModel(ProbModel):
         """
         total_time = 0
         self.model.init_training(al_iter) #Basically the same as the one in model but it's self.model.init_training
+        self.task_norm = self.model.task_norm
         for i in range(num_epoch):
             t = time.time()
             self.train_single_epoch(i, step_offset + i, num_epoch)
