@@ -126,7 +126,7 @@ class PREModel(ProbModel):
                     t_idx += 1
             print("Print in loop.")
             for unc in unc_cell:
-                print(print("Uncertainty shape ", unc.shape))
+                print("Uncertainty shape ", unc.shape)
             return pred, torch.concat(unc_cell, dim=-2)
 
         else:
