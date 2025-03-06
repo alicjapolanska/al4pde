@@ -114,12 +114,14 @@ class PREModel(ProbModel):
             #res_shape[1] -= 2
             #res_shape[2] -= 2
             unc_cell = [torch.zeros(res_shape)]
+            print("Device of unc ", unc_cell[0].device)
             for t in range(self.initial_step, final_step):
                 m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
                 unc_cell.append(unc)
-                print("Uncertainty shape ", unc.shape)
+                #print("Uncertainty shape ", unc.shape)
+                print("Device of unc ", unc_cell.device)
                 if t_idx is not None:
                     t_idx += 1
             return pred, torch.concat(unc_cell, dim=-2)
