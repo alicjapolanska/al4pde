@@ -120,7 +120,7 @@ class PREModel(ProbModel):
             unc_cell = []
             print("Input field shape is ", xx.shape)
             for t in range(self.initial_step, final_step):
-                m, unc = self.uncertainty(pred, grid, t_idx, pde_param, True)
+                m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
                 if not unc_cell:
