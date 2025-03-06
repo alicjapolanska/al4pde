@@ -108,7 +108,6 @@ class PREModel(ProbModel):
         #pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
     def uncertainty(self, xx, grid, t_idx=None, pde_param=None, return_state=True):
         pred = self.model(xx, grid, pde_param)
-        #print("Pred shape", pred.shape)
         unc = self.residual(pred, pde_param)
         if return_state:
             return pred, unc
@@ -119,12 +118,14 @@ class PREModel(ProbModel):
         if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
             unc_cell = []
+            print("Input field shape is ", xx.shape)
             for t in range(self.initial_step, final_step):
-                m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
+                m, unc = self.uncertainty(pred, grid, t_idx, pde_param, True)
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
                 if not unc_cell:
                     unc_cell.append(torch.zeros_like(unc)) #append zeros for first entry
+                    print("Uncertainty shape is ", unc.shape)
                 unc_cell.append(unc)
 
                 if t_idx is not None:
