@@ -63,7 +63,16 @@ class PREModel(ProbModel):
     def train_loader_full_traj(self):
         return self.model.train_loader_full_traj
     
-
+    def eval_pred(self, xx, yy, grid, param=None, t_idx=None):
+        xx = xx.to(device)
+        grid = grid.to(device)
+        yy = yy.to(device)
+        param = param.to(device)
+        t_idx = t_idx.to(device)
+        pred, unc = self.unc_roll_out(xx, grid, yy.shape[-2], param, t_idx)
+        onestep_pred = self.one_step_pred(yy, grid, param, t_idx)
+        return {"pred": pred, "onestep_pred": onestep_pred, "yy": yy, "param": param, "unc": unc}
+    
     def train_single_epoch(self, current_epoch, total_epoch, num_epoch):
         self.model.train_single_epoch(current_epoch, total_epoch, num_epoch)
     
