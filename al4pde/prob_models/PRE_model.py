@@ -98,7 +98,7 @@ class PREModel(ProbModel):
         #pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
     def uncertainty(self, xx, grid, t_idx=None, pde_param=None, return_state=True):
         pred = self.model(xx, grid, pde_param)
-        print("Pred shape", pred.shape)
+        #print("Pred shape", pred.shape)
         unc = self.residual(pred, pde_param)
         if return_state:
             return pred, unc
