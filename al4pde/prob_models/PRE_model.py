@@ -108,20 +108,15 @@ class PREModel(ProbModel):
         unc_cell = []
         if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
-            res_shape = list(xx.shape)
-            print("pred shape ", res_shape)
-            #adjust shape as boundary is removed for residual
-            res_shape[0] -= 2
-            res_shape[1] -= 2
-            unc_cell = [torch.zeros(res_shape, device=xx.device)]
-            print("Device of unc ", unc_cell[0].device)
+            unc_cell = []
             for t in range(self.initial_step, final_step):
                 m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
                 pred = torch.cat((pred, m), -2)
                 xx = torch.cat((xx[..., 1:, :], m), dim=-2)
+                if not unc_cell:
+                    unc_cell.append(torch.zeros_like(unc)) #append zeros for first entry
                 unc_cell.append(unc)
-                print("Device of unc ", unc.device)
-                print("Unc ", unc)
+
                 if t_idx is not None:
                     t_idx += 1
             print("Print in loop.")
