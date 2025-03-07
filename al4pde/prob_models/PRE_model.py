@@ -34,6 +34,7 @@ class PREModel(ProbModel):
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
         nu = torch.tensor(pde_param, dtype=torch.float32, device=device)
         print("Field shape before permuting ", uu.shape)
+        print("Shape on nu ", nu.shape, nu)
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
         uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
