@@ -38,12 +38,17 @@ class PREModel(ProbModel):
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
         uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
+        nu = nu.permute(1, 0)
         print("Field shape after permuting ", uu.shape)
+        print("nu shape after permuting ", nu.shape)
 
         #Defining the required Convolutional Operations. 
         D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
         D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
         D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
+
+        print("D_xx shape ", D_xx(uu).shape)
+        print("D_x shape ", D_x(uu).shape)
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         print("Residual shape ", res.shape)
