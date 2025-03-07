@@ -32,7 +32,7 @@ class PREModel(ProbModel):
 
         dx = torch.tensor(dx, dtype=torch.float32, device=device)
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
-        nu = torch.tensor(pde_param, dtype=torch.float32, device=device)
+        nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
         print("Field shape before permuting ", uu.shape)
         print("Shape on nu ", nu.shape, nu)
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
