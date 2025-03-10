@@ -153,7 +153,7 @@ class PREModel(ProbModel):
         
             print("Input field shape is ", xx.shape)
             print("Final step is ", final_step)
-            pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
+            pred = self.model.roll_out(pred, grid, final_step, pde_param, t_idx, return_features)
             print("Prediction shape is ", pred.shape)
             unc = self.uncertainty(xx, grid, t_idx, pde_param, False)
             print("Uncertainty shape is ", unc.shape)
