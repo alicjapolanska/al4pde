@@ -124,7 +124,7 @@ class PREModel(ProbModel):
             return pred, unc
         return unc
 
-    def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
+    def unc_roll_out_old(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
         unc_cell = []
         if self.training_type in ['autoregressive', 'teacher_forcing']:
             pred = xx
@@ -143,6 +143,22 @@ class PREModel(ProbModel):
                     t_idx += 1
 
             return pred, torch.concat(unc_cell, dim=-2)
+
+        else:
+            raise ValueError(self.training_type)
+        
+    def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
+       
+        if self.training_type in ['autoregressive', 'teacher_forcing']:
+        
+            unc_cell = []
+            print("Input field shape is ", xx.shape)
+            pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
+            print("Prediction shape is ", pred.shape)
+            unc = self.uncertainty(xx, grid, t_idx, pde_param, False)
+            print("Uncertainty shape is ", unc.shape)
+
+            return pred, unc
 
         else:
             raise ValueError(self.training_type)
