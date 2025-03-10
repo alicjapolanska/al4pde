@@ -148,11 +148,11 @@ class PREModel(ProbModel):
             raise ValueError(self.training_type)
         
     def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
-       
+
         if self.training_type in ['autoregressive', 'teacher_forcing']:
         
-            unc_cell = []
             print("Input field shape is ", xx.shape)
+            print("Final step is ", final_step)
             pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
             print("Prediction shape is ", pred.shape)
             unc = self.uncertainty(xx, grid, t_idx, pde_param, False)
