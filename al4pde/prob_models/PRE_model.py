@@ -103,42 +103,6 @@ class PREModel(ProbModel):
                 if (i > 0 and i % self.vis_period == 0) or i == num_epoch - 1:
                     self.visualize(step_offset + i)
         return total_time
-
-    #def uncertainty(self, xx, grid, final_step, pde_param=None, t_idx=None, return_state=False, return_features=False):
-        #print("pde param", pde_param, pde_param.shape)
-        #if pde_param.dim() == 1:
-        #    pde_param = pde_param.unsqueeze(0)
-        #    print("pde param unsqueezed", pde_param, pde_param.shape)
-        #pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-    def uncertainty(self, xx, grid, t_idx=None, pde_param=None, return_state=True):
-        pred = self.model(xx, grid, pde_param)
-        unc = self.residual(pred, pde_param)
-        if return_state:
-            return pred, unc
-        return unc
-
-    def unc_roll_out_old(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
-        unc_cell = []
-        if self.training_type in ['autoregressive', 'teacher_forcing']:
-            pred = xx
-            unc_cell = []
-            print("Input field shape is ", xx.shape)
-            for t in range(self.initial_step, final_step):
-                m, unc = self.uncertainty(xx, grid, t_idx, pde_param, True)
-                pred = torch.cat((pred, m), -2)
-                xx = torch.cat((xx[..., 1:, :], m), dim=-2)
-                if not unc_cell:
-                    unc_cell.append(torch.zeros_like(unc)) #append zeros for first entry
-                    print("Uncertainty shape is ", unc.shape)
-                unc_cell.append(unc)
-
-                if t_idx is not None:
-                    t_idx += 1
-
-            return pred, torch.concat(unc_cell, dim=-2)
-
-        else:
-            raise ValueError(self.training_type)
         
     def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
 
