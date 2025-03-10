@@ -33,12 +33,12 @@ class PREModel(ProbModel):
         dx = torch.tensor(dx, dtype=torch.float32, device=device)
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
         nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
-        print("Field shape before permuting ", uu.shape)
-        print("Shape of nu ", nu.shape)
+        #print("Field shape before permuting ", uu.shape)
+        #print("Shape of nu ", nu.shape)
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
         uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
-        print("Field shape after permuting ", uu.shape)
+        #print("Field shape after permuting ", uu.shape)
 
         #Defining the required Convolutional Operations. 
         D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
@@ -46,13 +46,13 @@ class PREModel(ProbModel):
         D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
-        print("Residual shape ", res.shape)
+        #print("Residual shape ", res.shape)
 
         if boundary:
             return res.permute(0, 2, 1).unsqueeze(-1)
         else: 
             res = res[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
-            print("Residual shape after permuting ", res.shape)
+            #print("Residual shape after permuting ", res.shape)
             return res
         
     @property
@@ -144,11 +144,11 @@ class PREModel(ProbModel):
 
         if self.training_type in ['autoregressive', 'teacher_forcing']:
         
-            print("Input field shape is ", xx.shape)
+            #print("Input field shape is ", xx.shape)
             pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-            print("Prediction shape is ", pred.shape)
+            #print("Prediction shape is ", pred.shape)
             unc = self.residual(pred, pde_param)
-            print("Uncertainty shape is ", unc.shape)
+            #print("Uncertainty shape is ", unc.shape)
 
             return pred, unc
 
