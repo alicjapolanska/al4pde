@@ -34,7 +34,7 @@ class PREModel(ProbModel):
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
         nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
         print("Field shape before permuting ", uu.shape)
-        print("Shape on nu ", nu.shape)
+        print("Shape of nu ", nu.shape)
         # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
         uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
         uu = uu.permute(0, 2, 1) #permute for correct PRE computation
@@ -44,13 +44,6 @@ class PREModel(ProbModel):
         D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
         D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
         D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
-
-        print("D_xx shape ", D_xx(uu).shape)
-        print("D_x shape ", D_x(uu).shape)
-        print("Last term shape ", (nu / np.pi * D_xx(uu) * (2*dt/dx)).shape)
-        print("Core shape ", (nu*D_xx(uu)).shape)
-        print("First term shape ", (dx*D_t(uu)).shape)
-        print("Second term shape ", (dt * uu * D_x(uu)).shape)
 
         res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
         print("Residual shape ", res.shape)
