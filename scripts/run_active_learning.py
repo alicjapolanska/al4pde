@@ -91,6 +91,12 @@ def main(cfg: DictConfig):
 
         print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
         print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
+        if isinstance(cfg.acquisition.data_schedule, str):
+            cfg.acquisition.data_schedule = hydra.utils.instantiate(
+                OmegaConf.select(cfg, f"acquisition.data_schedule")
+            )
+        print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
+        print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
 
 
         print("\nactive learning iteration " + str(al_iter), flush=True)
