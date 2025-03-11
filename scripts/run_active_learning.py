@@ -94,8 +94,8 @@ def main(cfg: DictConfig):
         if isinstance(cfg.acquisition.data_schedule, str):
             cfg.acquisition.data_schedule = OmegaConf.load(
         f"config/acquisition/data_schedule/{cfg.acquisition.data_schedule}.yaml")
-            
-            cfg.acquisition.data_schedule = hydra.util.instantiate(cfg.acquisition.data_schedule)
+
+            cfg.acquisition.data_schedule = hydra.utils.instantiate(cfg.acquisition.data_schedule)
 
         print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
         print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
