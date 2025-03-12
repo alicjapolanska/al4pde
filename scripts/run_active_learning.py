@@ -89,21 +89,6 @@ def main(cfg: DictConfig):
     for al_iter in range(first_al_iter, cfg.num_al_iter):
         is_last = al_iter == cfg.num_al_iter - 1
 
-        print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
-        print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
-        if isinstance(cfg.acquisition.data_schedule, str):
-            cfg.acquisition.data_schedule = OmegaConf.load(
-        f"config/acquisition/data_schedule/{cfg.acquisition.data_schedule}.yaml")
-            print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
-            print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
-
-            cfg.acquisition.data_schedule = hydra.utils.instantiate(cfg.acquisition.data_schedule)
-
-        print(f"acquisition.data_schedule type: {type(cfg.acquisition.data_schedule)}")
-        print(f"acquisition.data_schedule content: {cfg.acquisition.data_schedule}")
-        
-
-
         print("\nactive learning iteration " + str(al_iter), flush=True)
 
         # retrain ensemble model
