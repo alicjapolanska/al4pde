@@ -19,6 +19,9 @@ from al4pde.evaluation.visualization import end_of_al_iter_plots
 from scripts.gen_data import generate_data
 from al4pde.prob_models.build_prob_model import build_prob_model
 from al4pde.acquisition.build_selection import build_strategy
+import al4pde.tasks.ic_gen.ic_gen_burgers
+print("Directory to module", dir(al4pde.tasks.ic_gen.ic_gen_burgers))
+
 
 
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
