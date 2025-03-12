@@ -25,7 +25,4 @@ sim:
   if_norm: false
   if_second_order: 1.0
 
-data_gen:
-  num_test_batches: 4
-  num_initial_batches: 2
-  batch_size: 4
+num_al_iter: 4
