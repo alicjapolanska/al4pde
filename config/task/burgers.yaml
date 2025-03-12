@@ -24,5 +24,3 @@ sim:
   show_steps: 100
   if_norm: false
   if_second_order: 1.0
-
-num_al_iter: 4
