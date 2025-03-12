@@ -111,7 +111,7 @@ class PREModel(ProbModel):
             #print("Input field shape is ", xx.shape)
             pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
             #print("Prediction shape is ", pred.shape)
-            unc = self.residual(pred, pde_param)
+            unc = torch.abs(self.residual(pred, pde_param))
             #print("Uncertainty shape is ", unc.shape)
 
             return pred, unc
