@@ -184,7 +184,7 @@ class PREModel(ProbModel):
                         grid = grid.to(device)
                         param = param.to(device)
                         t_idx = t_idx.to(device)
-                        pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
+                        pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
                         pred = pred.to("cpu")
 
                         save_label = f"PRE_sample_rollout_{current_idx}"
