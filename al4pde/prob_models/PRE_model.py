@@ -183,7 +183,7 @@ class PREModel(ProbModel):
                         xx = xx.to(device)
                         grid = grid.to(device)
                         param = param.to(device)
-                        t_ix = t_ix.to(device)
+                        t_idx = t_idx.to(device)
                         pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
                         pred = pred.to("cpu")
 
