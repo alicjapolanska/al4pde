@@ -141,7 +141,7 @@ class PREModel(ProbModel):
 
         #remove dimensions of size 1 (batch size, time and channels)
         PRE = PRE.squeeze()
-        yy = yy.squeeze()
+        yy = yy.squeeze()[1:-1] #cut off boundary
 
         plt.plot(yy, PRE)
         plt.xlabel("x")
