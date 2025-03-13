@@ -180,7 +180,12 @@ class PREModel(ProbModel):
 
                         print("Devices xx ", xx.device, " grid ", grid.device, " param ", param.device)
                         #plot rolled out timestep
+                        xx = xx.to(device)
+                        grid = grid.to(device)
+                        param = param.to(device)
+                        t_ix = t_ix.to(device)
                         pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
+                        pred = pred.to("cpu")
 
                         save_label = f"PRE_sample_rollout_{current_idx}"
                         if add_to_label:
