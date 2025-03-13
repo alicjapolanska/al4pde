@@ -161,6 +161,8 @@ class PREModel(ProbModel):
             for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(self.val_loader):
                 batch_size = xx.shape[0]
 
+                print("Shapes: batch_idx", batch_idx.shape, " xx ", xx.shape, " yy ", yy.shape, " grid ", grid.shape, " param ", param.shape, " t_idx ", t_idx.shape, t_idx)
+
                 for i in range(batch_size):
                     if current_idx in chosen_indices:
                         data_sample = xx[i, :, save_step, :].unsqueeze(0)  # Keep batch dimension
