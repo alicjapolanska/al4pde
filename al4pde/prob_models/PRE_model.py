@@ -5,6 +5,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import torch.nn as nn
 import numpy as np
 from hydra.utils import instantiate
+import matplotlib.pyplot as plt
+import random
 
 from al4pde.evaluation.visualization import plot_worst_traj
 from al4pde.prob_models.prob_model import ProbModel
@@ -23,8 +25,8 @@ class PREModel(ProbModel):
     
     def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
-            uu  - tensor containing solution value 
-            pde_param - Burgers parameter nu 
+            uu  - tensor containing solution value (bs, nx, nt, 1)
+            pde_param - Burgers parameter nu (bs, 1)
             boundary - Whether to include boundary in PRE or not
             # TODO Feed in dx and dt from config file
             """
@@ -102,6 +104,11 @@ class PREModel(ProbModel):
             if vis:
                 if (i > 0 and i % self.vis_period == 0) or i == num_epoch - 1:
                     self.visualize(step_offset + i)
+        
+        if vis:
+            print("Plotting PRE")
+            self.visualize_PRE(add_to_label = "good_" + str(al_iter))
+        
         return total_time
         
     def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
@@ -122,6 +129,53 @@ class PREModel(ProbModel):
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
 
+    def plot_PRE(data, pde_param: float, save_label: str):
+        """Plot PRE for one data instance. Data should be of shape (1, Nx, 1, 1)."""
+
+        PRE = self.residual(data, pde_param)
+
+        #remove dimensions of size 1 (batch size, time and channels)
+        PRE = PRE.squeeze()
+        data = data.squeeze()
+
+        plt.plot(data, PRE)
+        plt.xlabel("x")
+        plt.ylabel("PRE")
+        plt.savefig("plots/" + save_label + ".png")
+        plt.show()   
+
+    def visualize_PRE(self, num_samples: int = 3, add_to_label: str = None, save_step: int = 5):
+        """Randomly select num_samples validation instances and plot PRE for their trajectory, as well as rolled out trajectory by the model. The plot is just at time step save_step.
+
+            num_samples (int): number of trajectories to plot
+            add_to_label (str): string that will be appended at the end of the plots' filenames
+            save_step (int): time step to plot
+            """
+
+        dataset_size = len(self.val_loader.dataset)  # Total number of samples
+        chosen_indices = set(random.sample(range(dataset_size), min(num_samples, dataset_size)))
+
+        current_idx = 0  # Track global index in dataset
+
+        with torch.no_grad():
+            for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(self.val_loader):
+                batch_size = xx.shape[0]
+
+                for i in range(batch_size):
+                    if current_idx in chosen_indices:
+                        data_sample = xx[i, :, save_step, :].unsqueeze(0)  # Keep batch dimension
+                        pde_param = param[i, :].item()
+                        save_label = f"PRE_val_sample_{current_idx}"
+                        if add_to_label:
+                            save_label += "_" + add_to_label
+
+                        self.plot_PRE(data_sample, pde_param, save_label)
+
+                        chosen_indices.remove(current_idx)  # Remove so we stop early if needed
+                        if not chosen_indices:  # Stop once we've processed all chosen indices
+                            return
+
+                    current_idx += 1  # Update global index across batches
 
 def build_PREModel(task, cfg):
     model = build_wrapper(task, cfg.model_wrapper)
