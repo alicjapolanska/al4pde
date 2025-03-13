@@ -178,6 +178,7 @@ class PREModel(ProbModel):
 
                         self.plot_PRE(sample_traj, pde_param, save_label, save_step)
 
+                        print("Devices xx ", xx.device, " grid ", grid.device, " param ", param.device)
                         #plot rolled out timestep
                         pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
 
