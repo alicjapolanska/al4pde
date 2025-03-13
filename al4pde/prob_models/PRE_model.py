@@ -143,7 +143,8 @@ class PREModel(ProbModel):
         PRE = PRE.squeeze()
         yy = yy.squeeze()[1:-1] #cut off boundary
 
-        plt.plot(yy, PRE)
+        fig = plt.figure()
+        plt.plot(yy, PRE, ".")
         plt.xlabel("x")
         plt.ylabel("PRE")
         plt.savefig("plots/" + save_label + ".png")
