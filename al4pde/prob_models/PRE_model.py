@@ -129,16 +129,21 @@ class PREModel(ProbModel):
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
 
-    def plot_PRE(data, pde_param: float, save_label: str):
-        """Plot PRE for one data instance. Data should be of shape (1, Nx, 1, 1)."""
+    def plot_PRE(self, yy, pde_param: float, save_label: str, save_step: int = 5):
+        """Plot PRE for one data instance at timestep . Trajectory should be of shape (1, Nx, Nt, 1).
+            save_step (int): time step to plot"""
 
-        PRE = self.residual(data, pde_param)
+        PRE = self.residual(yy, pde_param)
+
+        #select time step save_step
+        PRE = PRE[:, :, save_step, :]
+        yy = yy[:, :, save_step, :]
 
         #remove dimensions of size 1 (batch size, time and channels)
         PRE = PRE.squeeze()
-        data = data.squeeze()
+        yy = yy.squeeze()
 
-        plt.plot(data, PRE)
+        plt.plot(yy, PRE)
         plt.xlabel("x")
         plt.ylabel("PRE")
         plt.savefig("plots/" + save_label + ".png")
@@ -149,7 +154,6 @@ class PREModel(ProbModel):
 
             num_samples (int): number of trajectories to plot
             add_to_label (str): string that will be appended at the end of the plots' filenames
-            save_step (int): time step to plot
             """
 
         dataset_size = len(self.val_loader.dataset)  # Total number of samples
@@ -165,13 +169,13 @@ class PREModel(ProbModel):
 
                 for i in range(batch_size):
                     if current_idx in chosen_indices:
-                        data_sample = yy[i, :, save_step, :].unsqueeze(0)  # Keep batch dimension
+                        data_sample = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
                         pde_param = param[i, :].item()
                         save_label = f"PRE_val_sample_{current_idx}"
                         if add_to_label:
                             save_label += "_" + add_to_label
 
-                        self.plot_PRE(data_sample, pde_param, save_label)
+                        self.plot_PRE(data_sample, pde_param, save_label, save_step)
 
                         chosen_indices.remove(current_idx)  # Remove so we stop early if needed
                         if not chosen_indices:  # Stop once we've processed all chosen indices
