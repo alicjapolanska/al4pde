@@ -95,6 +95,7 @@ class PREModel(ProbModel):
         total_time = 0
         self.model.init_training(al_iter) #Basically the same as the one in model but it's self.model.init_training
         self.task_norm = self.model.task_norm
+        
         for i in range(num_epoch):
             t = time.time()
             self.train_single_epoch(i, step_offset + i, num_epoch)
@@ -104,6 +105,10 @@ class PREModel(ProbModel):
             if vis:
                 if (i > 0 and i % self.vis_period == 0) or i == num_epoch - 1:
                     self.visualize(step_offset + i)
+            if i==5:
+                if vis:
+                    print("Plotting PRE")
+                    self.visualize_PRE(add_to_label = "bad_" + str(al_iter))
         
         if vis:
             print("Plotting PRE")
