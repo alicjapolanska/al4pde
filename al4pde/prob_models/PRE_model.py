@@ -170,13 +170,21 @@ class PREModel(ProbModel):
 
                 for i in range(batch_size):
                     if current_idx in chosen_indices:
-                        data_sample = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
+                        sample_traj = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
                         pde_param = param[i, :].item()
                         save_label = f"PRE_val_sample_{current_idx}"
                         if add_to_label:
                             save_label += "_" + add_to_label
 
-                        self.plot_PRE(data_sample, pde_param, save_label, save_step)
+                        self.plot_PRE(sample_traj, pde_param, save_label, save_step)
+
+                        #plot rolled out timestep
+                        pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
+
+                        save_label = f"PRE_sample_rollout_{current_idx}"
+                        if add_to_label:
+                            save_label += "_" + add_to_label
+                        self.plot_PRE(pred, pde_param, save_label, save_step)
 
                         chosen_indices.remove(current_idx)  # Remove so we stop early if needed
                         if not chosen_indices:  # Stop once we've processed all chosen indices
