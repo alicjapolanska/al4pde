@@ -117,7 +117,7 @@ class PREModel(ProbModel):
         if vis:
             # Calculate prediction after training
             print("Calculating good model prediction")
-            self.calculate_current_predictions(model_trained = False)
+            self.calculate_current_predictions(model_trained = True)
             print("Plot PRE comparison over trajectories")
             self.plot_PRE(add_to_label = "_" + str(al_iter))
         
@@ -151,6 +151,9 @@ class PREModel(ProbModel):
         Assumes trajectory has shape (1, Nx, Nt, 1).
         
             add_to_label (str): string that will be appended at the end of the plots' filenames"""
+        
+        print("Keys ", self.current_ground_truths.keys(), self.current_bad_predictions.keys(), self.current_good_predictions.keys())
+        print("Vals ", self.current_ground_truths, self.current_bad_predictions, self.current_good_predictions)
 
         for data_idx in self.current_ground_truths:
 
