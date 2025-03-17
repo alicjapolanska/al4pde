@@ -153,7 +153,7 @@ class PREModel(ProbModel):
         ax.set_yticks([])  # Remove y-axis ticks
         fig.colorbar(im1, label="PRE")   
         plt.tight_layout()
-        plt.savefig(f"self.task.img_save_path/{save_label}.png")
+        plt.savefig(os.path.join(self.task.img_save_path, save_label + ".png"))
         plt.show()
 
 
