@@ -235,7 +235,7 @@ class PREModel(ProbModel):
             num_samples (int): number of trajectories to plot
             """
 
-        if not self.model_trained:
+        if not model_trained:
             dataset_size = len(self.val_loader.dataset)  # Total number of samples
             chosen_indices = set(random.sample(range(dataset_size), min(num_samples, dataset_size)))
         else:
