@@ -152,24 +152,6 @@ class PREModel(ProbModel):
         
             add_to_label (str): string that will be appended at the end of the plots' filenames"""
 
-        PRE = self.residual(yy, pde_param)  # Compute residuals
-        PRE = PRE.squeeze()  # Remove batch and channel dimensions
-
-        x_vals = np.arange(PRE.shape[0])  # x-axis (spatial dimension)
-        t_vals = np.arange(PRE.shape[1])  # y-axis (time dimension)
-
-        fig, ax = plt.subplots()
-        
-        # Heatmap of PRE
-        im1 = ax.imshow(PRE, aspect='auto', origin='lower', cmap='coolwarm', 
-                            extent=[t_vals.min(), t_vals.max(), x_vals.min(), x_vals.max()])
-        ax.set_xlabel("Time")
-        ax.set_yticks([])  # Remove y-axis ticks
-        fig.colorbar(im1, label="PRE")   
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.task.img_save_path, save_label + ".png"))
-        plt.show()
-
         for data_idx in self.current_ground_truths:
 
             PRE_traj = self.residual(*self.current_ground_truths[data_idx]).squeeze()  # Compute residuals
