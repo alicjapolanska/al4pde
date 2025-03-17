@@ -134,28 +134,30 @@ class PREModel(ProbModel):
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
 
-    def plot_PRE(self, yy, pde_param: float, save_label: str, save_step: int = 5):
-        """Plot PRE for one data instance at timestep . Trajectory should be of shape (1, Nx, Nt, 1).
-            save_step (int): time step to plot"""
+    def plot_PRE(self, yy, pde_param: float, save_label: str):
+        """Plot PRE as heatmaps for a data instance over all time steps.
+        Assumes trajectory has shape (1, Nx, Nt, 1)."""
 
-        PRE = self.residual(yy, pde_param)
+        PRE = self.residual(yy, pde_param)  # Compute residuals
+        PRE = PRE.squeeze()  # Remove batch and channel dimensions
 
-        #select time step save_step
-        PRE = PRE[:, :, save_step, :]
-        yy = yy[:, :, save_step, :]
+        x_vals = np.arange(PRE.shape[0])  # x-axis (spatial dimension)
+        t_vals = np.arange(PRE.shape[1])  # y-axis (time dimension)
 
-        #remove dimensions of size 1 (batch size, time and channels)
-        PRE = PRE.squeeze()
-        yy = yy.squeeze()[1:-1] #cut off boundary
+        fig, ax = plt.subplots()
+        
+        # Heatmap of PRE
+        im1 = ax.imshow(PRE, aspect='auto', origin='lower', cmap='coolwarm', 
+                            extent=[t_vals.min(), t_vals.max(), x_vals.min(), x_vals.max()])
+        ax.set_xlabel("Time")
+        ax.set_yticks([])  # Remove y-axis ticks
+        fig.colorbar(im1, label="PRE")   
+        plt.tight_layout()
+        plt.savefig(f"self.task.img_save_path/{save_label}.png")
+        plt.show()
 
-        fig = plt.figure()
-        plt.plot(yy, PRE, ".")
-        plt.xlabel("x")
-        plt.ylabel("PRE")
-        plt.savefig("plots/" + save_label + ".png")
-        plt.show()   
 
-    def visualize_PRE(self, num_samples: int = 3, add_to_label: str = None, save_step: int = 5):
+    def visualize_PRE(self, num_samples: int = 3, add_to_label: str = None):
         """Randomly select num_samples validation instances and plot PRE for their trajectory, as well as rolled out trajectory by the model. The plot is just at time step save_step.
 
             num_samples (int): number of trajectories to plot
@@ -181,7 +183,7 @@ class PREModel(ProbModel):
                         if add_to_label:
                             save_label += "_" + add_to_label
 
-                        self.plot_PRE(sample_traj, pde_param, save_label, save_step)
+                        self.plot_PRE(sample_traj, pde_param, save_label)
 
                         print("Devices xx ", xx.device, " grid ", grid.device, " param ", param.device)
                         #plot rolled out timestep
@@ -195,7 +197,7 @@ class PREModel(ProbModel):
                         save_label = f"PRE_sample_rollout_{current_idx}"
                         if add_to_label:
                             save_label += "_" + add_to_label
-                        self.plot_PRE(pred, pde_param, save_label, save_step)
+                        self.plot_PRE(pred, pde_param, save_label)
 
                         chosen_indices.remove(current_idx)  # Remove so we stop early if needed
                         if not chosen_indices:  # Stop once we've processed all chosen indices
