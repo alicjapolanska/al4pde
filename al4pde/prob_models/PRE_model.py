@@ -202,8 +202,6 @@ class PREModel(ProbModel):
             cbar = fig.colorbar(im3, ax=axes, orientation='vertical', fraction=0.02)
             cbar.set_label("PRE Value")
 
-            plt.tight_layout()
-
             # Save and show plot
             plt.savefig(os.path.join(self.task.img_save_path, "PRE_comp_" + str(data_idx) + add_to_label + ".png"))
             plt.show()
