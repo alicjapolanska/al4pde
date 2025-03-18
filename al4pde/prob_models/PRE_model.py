@@ -171,7 +171,7 @@ class PREModel(ProbModel):
             vmax = max(PRE_before.max(), PRE_traj.max(), PRE_after.max())
 
             # Create figure with 3 subplots
-            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
             # Plot "Before Training" heatmap
             im1 = axes[0].imshow(PRE_before, aspect='auto', origin='lower', cmap='coolwarm',
