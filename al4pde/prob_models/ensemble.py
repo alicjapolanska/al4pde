@@ -3,7 +3,6 @@ import time
 import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import torch.nn as nn
-import sys
 
 from al4pde.evaluation.visualization import plot_worst_traj
 from al4pde.prob_models.prob_model import ProbModel
@@ -97,8 +96,6 @@ class Ensemble(ProbModel):
             return ValueError(self.unc_roll_out_mode)
 
     def uncertainty(self, xx, grid, pde_param=None, t_idx=None, return_state=False):
-        print("Pde param is ", pde_param, pde_param.shape)
-        sys.exit("Printed debugging info, leave.")
         m_outputs = torch.stack([m(xx, grid, pde_param) for m in self.base_models])
         unc = m_outputs.var(dim=0)
         if return_state:
@@ -146,7 +143,6 @@ class Ensemble(ProbModel):
 
     def _roll_out_all(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
         b_m_out = [b.roll_out(xx, grid, final_step, pde_param, t_idx, return_features) for b in self.base_models]
-
         if return_features:
             traj = torch.stack([o[0] for o in b_m_out], dim=0)
             feat = torch.concat([o[1] for o in b_m_out], dim=-1)
