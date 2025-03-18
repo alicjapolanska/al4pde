@@ -152,8 +152,6 @@ class PREModel(ProbModel):
         
             add_to_label (str): string that will be appended at the end of the plots' filenames"""
         
-        print("Keys ", self.current_ground_truths.keys(), self.current_bad_predictions.keys(), self.current_good_predictions.keys())
-        print("Vals ", self.current_ground_truths, self.current_bad_predictions, self.current_good_predictions)
 
         for data_idx in self.current_ground_truths:
 
@@ -231,9 +229,6 @@ class PREModel(ProbModel):
             for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(self.val_loader):
                 batch_size = xx.shape[0]
 
-                print("Shapes: batch_idx", batch_idx, " xx ", xx.shape, " yy ", yy.shape, " grid ", grid.shape, " param ", param.shape)
-
-
                 for i in range(batch_size):
                     if current_idx in chosen_indices:
                         sample_traj = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
@@ -242,7 +237,6 @@ class PREModel(ProbModel):
                         if not model_trained:
                             self.current_ground_truths[current_idx] = [sample_traj, pde_param]
 
-                        print("Devices xx ", xx.device, " grid ", grid.device, " param ", param.device)
                         #plot rolled out timestep
                         xx = xx.to(device)
                         grid = grid.to(device)
