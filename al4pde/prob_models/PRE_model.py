@@ -166,6 +166,8 @@ class PREModel(ProbModel):
         
 
         for data_idx in self.current_ground_truths:
+            print("data idx ", data_idx)
+            print("Keys ", self.current_ground_truths.keys(), self.current_bad_predictions.keys(), self.current_good_predictions.keys())
 
             PRE_traj = self.residual(*self.current_ground_truths[data_idx]).squeeze()  # Compute residuals
             PRE_before = self.residual(*self.current_bad_predictions[data_idx]).squeeze()  # Compute residuals
