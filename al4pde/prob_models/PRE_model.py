@@ -259,8 +259,9 @@ class PREModel(ProbModel):
                         chosen_indices.remove(current_idx)  # Remove so we stop early if needed
                         if not chosen_indices:  # Stop once we've processed all chosen indices
                             if not model_trained:
+                                print("Saving bad predictions.")
                                 self.current_bad_predictions = predictions
-                            else:
+                            if model_trained:
                                 print("Saving good predictions.")
                                 self.current_good_predictions = predictions
                             return
