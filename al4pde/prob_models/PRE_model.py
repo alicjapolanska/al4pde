@@ -13,11 +13,16 @@ from al4pde.prob_models.prob_model import ProbModel
 from al4pde.models.build_wrapper import build_wrapper
 from al4pde.evaluation.stats import LossUncCorr, UncAvg
 from al4pde.prob_models.PREConvOps import ConvOps_1d
+from al4pde.utils import save_checkpoint, load_checkpoint
 
 
 class PREModel(ProbModel):
+    """Class for doing uncertainty-based acquisition using the absolute value of the physics 
+         residual error (PRE) as the uncertainty measure. The PRE is defined as the evaluation
+         of the composite differential operator of the PDE for the surrogate model, which should 
+         be zero for a perfect model. More information can be found in arXiv:2502.04406."""
 
-    def __init__(self, task, model_cfg):
+    def __init__(self, task, model_cfg, num_to_plot = 4, idxs_to_plot = None):
         super().__init__(task, model_cfg.training_type, model_cfg.t_train, model_cfg.batch_size, model_cfg.val_period, model_cfg.vis_period, model_cfg.loss)
         self.model = model_cfg
         self.stats.append(UncAvg("unc")) 
@@ -25,6 +30,8 @@ class PREModel(ProbModel):
         self.current_bad_predictions = {}
         self.current_good_predictions = {}
         self.current_ground_truths = {}
+        self.num_to_plot = num_to_plot #number of idx that will be randomly picked if idxs to plot is None
+        self.idxs_to_plot = idxs_to_plot
     
     def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
@@ -99,6 +106,11 @@ class PREModel(ProbModel):
         self.model.init_training(al_iter) #Basically the same as the one in model but it's self.model.init_training
         self.task_norm = self.model.task_norm
         
+        if vis:
+            if self.idxs_to_plot is None:
+                dataset_size = len(self.val_loader.dataset)  # Total number of samples
+                self.idxs_to_plot = set(random.sample(range(dataset_size), min(self.num_to_plot, dataset_size)))
+
         for i in range(num_epoch):
             t = time.time()
             self.train_single_epoch(i, step_offset + i, num_epoch)
@@ -113,6 +125,7 @@ class PREModel(ProbModel):
                     # Calculate prediction at second step
                     print("Calculating bad model prediction")
                     self.calculate_current_predictions(model_trained = False)
+                    save_checkpoint(self.task.run_save_path, str(al_iter) + "_bad", sampling_finished=False)
         
         if vis:
             # Calculate prediction after training
@@ -120,6 +133,7 @@ class PREModel(ProbModel):
             self.calculate_current_predictions(model_trained = True)
             print("Plot PRE comparison over trajectories")
             self.plot_PRE(add_to_label = "_" + str(al_iter))
+            save_checkpoint(self.task.run_save_path, str(al_iter) + "_good")
         
             # Reset prediction to plot PRE for
             self.current_bad_predictions = {}
@@ -205,22 +219,16 @@ class PREModel(ProbModel):
             plt.show()
 
 
-    def calculate_current_predictions(self, model_trained: bool, num_samples: int = 3):
-        """Randomly select num_samples validation instances and plot PRE for their trajectory, as well as rolled out trajectory by the model. 
-            The plot is just at time step save_step.
+    def calculate_current_predictions(self, model_trained: bool = False):
+        """Calculate predictions of the model and store them as a class attribute, as well as the corresponding ground truths (if model_trained is False). 
 
             model_trained (bool): Whether model is trained or not. Determines if predictions are stored in 
                 current_bad_predictions (False) or current_good_predictions (True). If False, ground truths 
-                are also added to self.current_ground_truths.
+                are also added to self.current_ground_truths. Defaults to False.
 
-            num_samples (int): number of trajectories to plot
             """
 
-        if not model_trained:
-            dataset_size = len(self.val_loader.dataset)  # Total number of samples
-            chosen_indices = set(random.sample(range(dataset_size), min(num_samples, dataset_size)))
-        else:
-            chosen_indices = [*self.current_ground_truths] # Keys ie data indices as a list
+        chosen_indices = self.idxs_to_plot
 
         current_idx = 0  # Track global index in dataset
         predictions = {}
