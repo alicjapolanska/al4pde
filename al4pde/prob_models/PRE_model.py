@@ -261,6 +261,7 @@ class PREModel(ProbModel):
                             if not model_trained:
                                 self.current_bad_predictions = predictions
                             else:
+                                print("Saving good predictions.")
                                 self.current_good_predictions = predictions
                             return
 
