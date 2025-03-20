@@ -125,7 +125,6 @@ class PREModel(ProbModel):
                     # Calculate prediction at second step
                     print("Calculating bad model prediction")
                     self.calculate_current_predictions(model_trained = False)
-                    save_checkpoint(self.task.run_save_path, str(al_iter) + "_bad", sampling_finished=False)
         
         if vis:
             # Calculate prediction after training
@@ -133,7 +132,6 @@ class PREModel(ProbModel):
             self.calculate_current_predictions(model_trained = True)
             print("Plot PRE comparison over trajectories")
             self.plot_PRE(add_to_label = "_" + str(al_iter))
-            save_checkpoint(self.task.run_save_path, str(al_iter) + "_good")
         
             # Reset prediction to plot PRE for
             self.current_bad_predictions = {}
