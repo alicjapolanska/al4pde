@@ -228,7 +228,7 @@ class PREModel(ProbModel):
 
             """
 
-        chosen_indices = self.idxs_to_plot
+        chosen_indices = self.idxs_to_plot.copy()
         print(chosen_indices)
 
         current_idx = 0  # Track global index in dataset
