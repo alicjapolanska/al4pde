@@ -229,6 +229,7 @@ class PREModel(ProbModel):
             """
 
         chosen_indices = self.idxs_to_plot
+        print(chosen_indices)
 
         current_idx = 0  # Track global index in dataset
         predictions = {}
@@ -261,6 +262,7 @@ class PREModel(ProbModel):
                             if not model_trained:
                                 print("Saving bad predictions.")
                                 self.current_bad_predictions = predictions
+                            print("Model trained is ", model_trained)
                             if model_trained:
                                 print("Saving good predictions.")
                                 self.current_good_predictions = predictions
