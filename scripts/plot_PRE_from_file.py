@@ -25,7 +25,7 @@ def main(cfg: DictConfig):
 
     for i in range(num_al_iter-1):
 
-        load_checkpoint(path_to_models, i, model)
+        load_checkpoint(path_to_models, str(i), model)
 
         print(model.current_ground_truths)
 
