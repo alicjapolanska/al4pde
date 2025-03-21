@@ -2,6 +2,7 @@ import numpy as np
 import os
 import sys 
 import wandb
+wandb.init(mode="offline")
 import torch
 import jax
 import jax.numpy as jnp
