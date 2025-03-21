@@ -50,6 +50,7 @@ if False:
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
 def main(cfg: DictConfig):
 
+    al_iter = 0
     run = wandb.init(
         project=cfg.wandb.project,
         group=cfg.wandb.group,
@@ -57,10 +58,9 @@ def main(cfg: DictConfig):
         config=OmegaConf.to_container(cfg)
     )
 
-    if cfg.restore_checkpoint:
-        run_id = cfg.checkpoint_id
-    else:
-        run_id = run.id
+
+    run_id = cfg.checkpoint_id
+
 
     print("run_id", run_id, flush=True)
     print("torch_device", device)
@@ -81,7 +81,7 @@ def main(cfg: DictConfig):
     print("Prob model cfg", cfg.prob_model)
     prob_model = build_prob_model(task, cfg.prob_model)
 
-    first_al_iter, sampling_finished = load_checkpoint(run_save_path, cfg.checkpoint_file_name, prob_model)
+    first_al_iter, sampling_finished = load_checkpoint(run_save_path + "/checkpoints/"+str(al_iter)+".pt", cfg.checkpoint_file_name, prob_model)
 
     print(model.current_ground_truths)
 
