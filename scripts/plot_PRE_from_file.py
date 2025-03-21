@@ -11,7 +11,7 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.utils import load_checkpoint
 from al4pde.prob_models.build_prob_model import build_prob_model
 
-path_to_models = "data/runs/cnr1ahtx/checkpoints"
+path_to_models = "data/runs/cnr1ahtx"
 num_al_iter = 4
 
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
