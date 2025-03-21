@@ -19,6 +19,7 @@ def main(cfg: DictConfig):
 
     run_id = cfg.checkpoint_id
     run_save_path = os.path.join(cfg.task.run_save_path, run_id)
+    print(run_save_path)
     task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
     model = build_prob_model(task, cfg.prob_model)
 
