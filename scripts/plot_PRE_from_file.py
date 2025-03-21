@@ -46,47 +46,52 @@ if False:
 
 
 
+if False:
+    @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
+    def main(cfg: DictConfig):
 
-@hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
-def main(cfg: DictConfig):
-
-    al_iter = 0
-    run = wandb.init(
-        project=cfg.wandb.project,
-        group=cfg.wandb.group,
-        name=cfg.wandb.name,
-        config=OmegaConf.to_container(cfg)
-    )
-
-
-    run_id = cfg.checkpoint_id
+        al_iter = 0
+        run = wandb.init(
+            project=cfg.wandb.project,
+            group=cfg.wandb.group,
+            name=cfg.wandb.name,
+            config=OmegaConf.to_container(cfg)
+        )
 
 
-    print("run_id", run_id, flush=True)
-    print("torch_device", device)
-    print("jax_dev", xla_bridge.get_backend().platform, flush=True)
-
-    use_test = cfg.task.use_test
-    if use_test:
-        print("using test set")
-
-    # init components
-    set_current_seed(cfg.seed, 0, sampling_finished=True, task=None, use_test=use_test)
-    run_save_path = os.path.join(cfg.task.run_save_path, run_id)
-    task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
-    acq_strat = build_strategy(task, cfg.acquisition)
-    print("acq", acq_strat, flush=True)
-    print("Prob model cfg", cfg.prob_model)
-    cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
-    print("Prob model cfg", cfg.prob_model)
-    prob_model = build_prob_model(task, cfg.prob_model)
-
-    first_al_iter, sampling_finished = load_checkpoint(run_save_path, str(al_iter)+".pt", prob_model)
-
-    print(model.current_ground_truths)
+        run_id = cfg.checkpoint_id
 
 
+        print("run_id", run_id, flush=True)
+        print("torch_device", device)
+        print("jax_dev", xla_bridge.get_backend().platform, flush=True)
 
-if __name__ == "__main__":
-    main()
-    print("Done.", flush=True)
+        use_test = cfg.task.use_test
+        if use_test:
+            print("using test set")
+
+        # init components
+        set_current_seed(cfg.seed, 0, sampling_finished=True, task=None, use_test=use_test)
+        run_save_path = os.path.join(cfg.task.run_save_path, run_id)
+        task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
+        acq_strat = build_strategy(task, cfg.acquisition)
+        print("acq", acq_strat, flush=True)
+        print("Prob model cfg", cfg.prob_model)
+        cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
+        print("Prob model cfg", cfg.prob_model)
+        prob_model = build_prob_model(task, cfg.prob_model)
+
+        first_al_iter, sampling_finished = load_checkpoint(run_save_path, str(al_iter)+".pt", prob_model)
+
+        print(model.current_ground_truths)
+
+
+
+    if __name__ == "__main__":
+        main()
+        print("Done.", flush=True)
+
+path_to_models = "data/runs/cnr1ahtx/checkpoints"
+num_al_iter = 0
+
+model = torch.load(path_to_models+str(num_al_iter)+".pt")
