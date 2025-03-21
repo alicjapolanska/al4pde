@@ -1,5 +1,7 @@
 import numpy as np
+import sys 
 
+sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
 from al4pde.prob_models.PRE_model import PREModel
 from al4pde.utils import load_checkpoint
 from al4pde.prob_models.build_prob_model import build_prob_model
