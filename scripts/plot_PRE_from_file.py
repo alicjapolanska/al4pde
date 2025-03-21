@@ -91,7 +91,8 @@ if False:
         main()
         print("Done.", flush=True)
 
-path_to_models = "data/runs/cnr1ahtx/checkpoints"
+path_to_models = "data/runs/cnr1ahtx/checkpoints/"
 num_al_iter = 0
 
 model = torch.load(path_to_models+str(num_al_iter)+".pt")
+print(model.current_ground_truths)
