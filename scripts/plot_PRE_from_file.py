@@ -81,7 +81,7 @@ def main(cfg: DictConfig):
     print("Prob model cfg", cfg.prob_model)
     prob_model = build_prob_model(task, cfg.prob_model)
 
-    first_al_iter, sampling_finished = load_checkpoint(run_save_path + "/checkpoints/"+str(al_iter)+".pt", cfg.checkpoint_file_name, prob_model)
+    first_al_iter, sampling_finished = load_checkpoint(run_save_path, str(al_iter)+".pt", prob_model)
 
     print(model.current_ground_truths)
 
