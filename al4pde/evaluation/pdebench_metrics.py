@@ -181,14 +181,14 @@ def metric_func(pred, target, if_mean=True, Lx=1., Ly=1., Lz=1., iLow=4, iHigh=1
 
     #RMSE without boundary
     if len(idxs) == 4:  # 1D
-        pred_no_B = pred_no_B[:,:,1:-1,1:-1]
-        target_no_B = target_no_B[:,:,1:-1,1:-1]
+        pred_no_B = pred[:,:,1:-1,1:-1]
+        target_no_B = target[:,:,1:-1,1:-1]
     if len(idxs) == 5:  # 2D
-        pred_no_B = pred_no_B[:,:,1:-1,1:-1,1:-1]
-        target_no_B = target_no_B[:,:,1:-1,1:-1,1:-1]
+        pred_no_B = pred[:,:,1:-1,1:-1,1:-1]
+        target_no_B = target[:,:,1:-1,1:-1,1:-1]
     elif len(idxs) == 6:  # 3D
-        pred_no_B = pred_no_B[:,:,1:-1,1:-1,1:-1,1:-1]
-        target_no_B = target_no_B[:,:,1:-1,1:-1,1:-1,1:-1]
+        pred_no_B = pred[:,:,1:-1,1:-1,1:-1,1:-1]
+        target_no_B = target[:,:,1:-1,1:-1,1:-1,1:-1]
 
     err_mean_no_B = torch.sqrt(torch.mean((pred_no_B.view([nb, nc, -1, nt][:,:,]) - target_no_B.view([nb, nc, -1, nt])) ** 2, dim=2))  # mean over spatial dimensions
     err_RMSE_no_B = torch.mean(err_mean_no_B, dim=0)   # mean over batch dimension
