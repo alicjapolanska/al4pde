@@ -192,7 +192,7 @@ def metric_func(pred, target, if_mean=True, Lx=1., Ly=1., Lz=1., iLow=4, iHigh=1
 
     print(pred.shape, target.shape, pred_no_B.shape, target_no_B.shape)
 
-    err_mean_no_B = torch.sqrt(torch.mean((pred_no_B.view([nb, nc, -1, nt-2][:,:,]) - target_no_B.view([nb, nc, -1, nt-2])) ** 2, dim=2))  # mean over spatial dimensions
+    err_mean_no_B = torch.sqrt(torch.mean((pred_no_B.view([nb, nc, -1, nt-2]) - target_no_B.view([nb, nc, -1, nt-2])) ** 2, dim=2))  # mean over spatial dimensions
     err_RMSE_no_B = torch.mean(err_mean_no_B, dim=0)   # mean over batch dimension
 
     err_CSV = torch.sqrt(torch.mean(
