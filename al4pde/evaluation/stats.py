@@ -162,7 +162,7 @@ class PDEBenchStats(Stat):
         self.batch_results = []
         self.initial_step = None
         self.n = []
-        self.names = ["RMSE", "nRMSE", "CSV", "Max", "BD", "F", ]
+        self.names = ["RMSE", "nRMSE", "CSV", "Max", "BD", "F", "RMSE_no_B"]
 
     def init_eval(self, task_norm, initial_step):
         self.initial_step = initial_step
