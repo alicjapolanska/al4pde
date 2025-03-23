@@ -282,6 +282,7 @@ def metric_func(pred, target, if_mean=True, Lx=1., Ly=1., Lz=1., iLow=4, iHigh=1
                torch.mean(err_CSV, dim=[0, -1]), \
                torch.mean(err_Max, dim=[0, -1]), \
                torch.mean(err_BD, dim=[0, -1]), \
-               torch.mean(err_F, dim=[0, -1])
+               torch.mean(err_F, dim=[0, -1]), \
+               torch.mean(err_RMSE_no_B, dim=[0, -1])
     else:
         return err_RMSE, err_nRMSE, err_CSV, err_Max, err_BD, err_F, err_RMSE_no_B
