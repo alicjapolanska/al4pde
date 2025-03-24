@@ -83,7 +83,6 @@ def main(cfg: DictConfig):
 
     save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(num_al_iter)+".pt"))
     print("Dict keys ", save_dict['model'].keys())
-    print("Model keys ", prob_model.state_dict().keys())
     prob_model.init_training(num_al_iter)
     print("Model keys ", prob_model.model.state_dict().keys())
 
