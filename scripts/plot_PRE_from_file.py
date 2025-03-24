@@ -83,7 +83,7 @@ def main(cfg: DictConfig):
 
     save_dict = torch.load(path_to_models+str(num_al_iter)+".pt")
     prob_model.init_training(num_al_iter)
-    prob_model.load_state_dict(save_dict['model'])
+    prob_model.model.load_state_dict(save_dict['model'])
 
     print(prob_model.current_ground_truths)
 
