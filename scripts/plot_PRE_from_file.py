@@ -81,7 +81,11 @@ def main(cfg: DictConfig):
     print("Prob model cfg", cfg.prob_model)
     prob_model = build_prob_model(task, cfg.prob_model)
 
-    first_al_iter, sampling_finished = load_checkpoint(run_save_path, str(num_al_iter)+".pt", prob_model)
+    save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(num_al_iter)+".pt"))
+    print(print(save_dict['model'].keys()))
+    print(prob_model.model.state_dict().keys())
+
+    prob_model.init_training(num_al_iter)
 
     print(prob_model.current_ground_truths)
 
