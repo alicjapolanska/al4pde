@@ -91,6 +91,10 @@ class PREModel(ProbModel):
     
     def train_single_epoch(self, current_epoch, total_epoch, num_epoch):
         self.model.train_single_epoch(current_epoch, total_epoch, num_epoch)
+
+    def init_training(self, al_iter, load_train_data=True):
+        self.model.init_training(al_iter, load_train_data=load_train_data)
+
     
     def train_n_epoch(self, al_iter: int, num_epoch: int, step_offset: int, vis: bool = True,
                       prefix: str = "", is_last=False) -> float:
@@ -144,11 +148,9 @@ class PREModel(ProbModel):
 
         if self.training_type in ['autoregressive', 'teacher_forcing']:
         
-            #print("Input field shape is ", xx.shape)
             pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-            #print("Prediction shape is ", pred.shape)
+            pred = self.model.task_norm.denorm_traj(pred)
             unc = torch.abs(self.residual(pred, pde_param))
-            #print("Uncertainty shape is ", unc.shape)
 
             return pred, unc
 
@@ -166,8 +168,6 @@ class PREModel(ProbModel):
         
 
         for data_idx in self.current_ground_truths:
-            print("data idx ", data_idx)
-            print("Keys ", self.current_ground_truths.keys(), self.current_bad_predictions.keys(), self.current_good_predictions.keys())
 
             PRE_traj = self.residual(*self.current_ground_truths[data_idx]).squeeze()  # Compute residuals
             PRE_before = self.residual(*self.current_bad_predictions[data_idx]).squeeze()  # Compute residuals
@@ -229,8 +229,6 @@ class PREModel(ProbModel):
             """
 
         chosen_indices = self.idxs_to_plot.copy()
-        print(chosen_indices)
-
         current_idx = 0  # Track global index in dataset
         predictions = {}
 
