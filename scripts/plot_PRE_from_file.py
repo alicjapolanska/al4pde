@@ -89,6 +89,10 @@ def main(cfg: DictConfig):
 
     print(prob_model.current_ground_truths)
 
+    prob_model.calculate_current_predictions(model_trained= False)
+    prob_model.calculate_current_predictions(model_trained= True)
+
+    print(prob_model.current_ground_truths)
 
 
 if __name__ == "__main__":
