@@ -82,10 +82,11 @@ def main(cfg: DictConfig):
     prob_model = build_prob_model(task, cfg.prob_model)
 
     save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(num_al_iter)+".pt"))
-    print(print(save_dict['model'].keys()))
-    print(prob_model.model.state_dict().keys())
-
+    print("Dict keys ", save_dict['model'].keys())
+    print("Model keys ", prob_model.state_dict().keys())
     prob_model.init_training(num_al_iter)
+    print("Model keys ", prob_model.model.state_dict().keys())
+
 
     print(prob_model.current_ground_truths)
 
