@@ -95,7 +95,15 @@ class PREModel(ProbModel):
     def init_training(self, al_iter, load_train_data=True):
         self.model.init_training(al_iter, load_train_data=load_train_data)
 
-    
+    def choose_idxs_to_plot(self):
+        """Choose self.num_to_plot number if random points from the validation set to plot. 
+            Saved in self.idx_to_plot. If self.num_to_plot is bigger than validation dataset size,
+            return all indices in the dataset size."""
+        
+        dataset_size = len(self.val_loader.dataset)  # Total number of samples
+        self.idxs_to_plot = set(random.sample(range(dataset_size), min(self.num_to_plot, dataset_size)))
+
+
     def train_n_epoch(self, al_iter: int, num_epoch: int, step_offset: int, vis: bool = True,
                       prefix: str = "", is_last=False) -> float:
         """ Train model for num_epoch epochs.
@@ -112,8 +120,7 @@ class PREModel(ProbModel):
         
         if vis:
             if self.idxs_to_plot is None:
-                dataset_size = len(self.val_loader.dataset)  # Total number of samples
-                self.idxs_to_plot = set(random.sample(range(dataset_size), min(self.num_to_plot, dataset_size)))
+                self.choose_idxs_to_plot()
 
         for i in range(num_epoch):
             t = time.time()
