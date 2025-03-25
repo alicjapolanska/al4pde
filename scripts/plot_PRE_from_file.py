@@ -97,6 +97,7 @@ def main(cfg: DictConfig):
 
             save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter-1)+".pt"))
             prob_model.init_training(al_iter-1)
+            print("Task norm is ", prob_model.task_norm)
             prob_model.load_state_dict(save_dict['model'])
 
             # Choose idxs at random and keep them constant
@@ -120,6 +121,7 @@ def main(cfg: DictConfig):
 
         save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
         prob_model.init_training(al_iter)
+        print("Task norm is ", prob_model.task_norm)
         prob_model.load_state_dict(save_dict['model'])
 
         # Choose idxs at random and keep them constant
