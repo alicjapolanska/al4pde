@@ -99,6 +99,8 @@ def main(cfg: DictConfig):
             prob_model.init_training(al_iter-1)
             print("Task norm is ", prob_model.task_norm)
             prob_model.load_state_dict(save_dict['model'])
+            print("Model keys:", prob_model.model.state_dict().keys())
+            print("Prob model keys:", prob_model.state_dict().keys())
 
             # Choose idxs at random and keep them constant
             prob_model.choose_idxs_to_plot()
