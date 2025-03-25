@@ -120,10 +120,11 @@ def main(cfg: DictConfig):
         prob_model = build_prob_model(task, cfg.prob_model)
 
         save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
-        print("Model keys:", prob_model.model.state_dict().keys())
-        print("Prob model keys:", prob_model.state_dict().keys())
 
         prob_model.init_training(al_iter)
+
+        print("Model keys:", prob_model.model.state_dict().keys())
+        print("Prob model keys:", prob_model.state_dict().keys())
         print("Task norm is ", prob_model.task_norm)
         prob_model.load_state_dict(save_dict['model'])
 
