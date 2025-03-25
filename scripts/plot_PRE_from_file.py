@@ -55,9 +55,9 @@ def main(cfg: DictConfig):
     prob_model.calculate_current_predictions(model_trained= False)
     prob_model.calculate_current_predictions(model_trained= True)
 
-    print(prob_model.current_ground_truths[prob_model.idxs_to_plot[0]][:10], 
-          prob_model.current_bad_predictions[prob_model.idxs_to_plot[0]][:10],
-          prob_model.current_good_predictions[prob_model.idxs_to_plot[0]][:10])
+    print(prob_model.current_ground_truths[list(prob_model.idxs_to_plot)[0]][:10], 
+          prob_model.current_bad_predictions[list(prob_model.idxs_to_plot)[0]][:10],
+          prob_model.current_good_predictions[list(prob_model.idxs_to_plot)[0]][:10])
 
 
 if __name__ == "__main__":
