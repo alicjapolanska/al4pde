@@ -79,6 +79,7 @@ def main(cfg: DictConfig):
     num_al_iter =  cfg.num_al_iter
 
     for al_iter in range(1,num_al_iter):
+        print("AL iter", al_iter)
         run_id = cfg.checkpoint_id
 
 
@@ -114,6 +115,7 @@ def main(cfg: DictConfig):
                 PRE_traj_dict[data_idx] = prob_model.residual(*ground_truth_pred[data_idx]).squeeze()
                 PRE_before_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
 
+        cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
         prob_model = build_prob_model(task, cfg.prob_model)
 
         save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
