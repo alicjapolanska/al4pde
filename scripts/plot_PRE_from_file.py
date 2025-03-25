@@ -47,7 +47,7 @@ def main(cfg: DictConfig):
     print("Dict keys ", save_dict['model'].keys())
     prob_model.init_training(num_al_iter)
     print("Model keys ", prob_model.model.state_dict().keys())
-    prob_model.model.load_state_dict(save_dict['model'])
+    prob_model.load_state_dict(save_dict['model'])
 
 
     print(prob_model.current_ground_truths)
