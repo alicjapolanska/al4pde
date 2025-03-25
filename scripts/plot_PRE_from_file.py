@@ -76,7 +76,7 @@ def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, save_path):
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
 def main(cfg: DictConfig):
 
-    num_al_iter =  cfg.num_ak_iter
+    num_al_iter =  cfg.num_al_iter
 
     for al_iter in range(1,num_al_iter):
         run_id = cfg.checkpoint_id
