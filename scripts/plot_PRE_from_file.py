@@ -89,6 +89,7 @@ def main(cfg: DictConfig):
 
     print(prob_model.current_ground_truths)
 
+    prob_model.choose_idxs_to_plot()
     prob_model.calculate_current_predictions(model_trained= False)
     prob_model.calculate_current_predictions(model_trained= True)
 
