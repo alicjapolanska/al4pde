@@ -48,6 +48,7 @@ def main(cfg: DictConfig):
     prob_model.init_training(num_al_iter)
     print("Model keys ", prob_model.model.state_dict().keys())
     prob_model.load_state_dict(save_dict['model'])
+    prob_model.task_norm = prob_model.model.task_norm
 
 
     print(prob_model.current_ground_truths)
