@@ -94,7 +94,10 @@ class PREModel(ProbModel):
 
     def init_training(self, al_iter, load_train_data=True):
         self.model.init_training(al_iter, load_train_data=load_train_data)
+        print("Model task norm is ", self.model.task_norm)
         self.task_norm = self.model.task_norm
+        print("PRE task norm is ", self.task_norm)
+
 
     def choose_idxs_to_plot(self):
         """Choose self.num_to_plot number if random points from the validation set to plot. 
