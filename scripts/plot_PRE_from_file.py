@@ -18,11 +18,9 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.prob_models.build_prob_model import build_prob_model
 import matplotlib.pyplot as plt
 
-def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, save_path):
+def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, al_iter, data_idx, save_path):
     """Plot PRE as heatmaps for a data instance over all time steps.
-    Assumes trajectory has shape (1, Nx, Nt, 1).
-    
-        add_to_label (str): string that will be appended at the end of the plots' filenames"""
+        Assumes PRE has shape (Nx, Nt)."""
     
 
 
@@ -68,15 +66,38 @@ def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, save_path):
     cbar.set_label("PRE Value")
 
     # Save and show plot
-    plt.savefig(save_path)
+    plt.savefig(os.path.join(save_path, "PRE_comp_al_it_" + str(al_iter) + "_" + str(data_idx) + ".png"))
     plt.show()
 
 
+def plot_PRE_slice(PRE_traj, PRE_before, PRE_after, times_to_plot, al_iter, data_idx, save_path):
+    """Plot PRE as heatmaps for a data instance over time steps in times_to_plot.
+        Assumes PRE has shape (Nx, Nt)."""
+    
+    x_vals = np.arange(PRE_traj.shape[0])  # Spatial dimension
+
+    for time in times_to_plot:
+
+        PRE_traj_slice = PRE_traj[:,time].squeeze()
+        PRE_before_slice = PRE_before[:,time].squeeze()
+        PRE_after_slice = PRE_after[:,time].squeeze()
+
+        fig, ax = plt.subplots()
+        plt.plot(x_vals, PRE_before_slice, "--", label="Before iteration")
+        plt.plot(x_vals, PRE_traj_slice, "--", label="GT")
+        plt.plot(x_vals, PRE_after_slice, "--", label="After iteration")
+        plt.title("PRE slice at time "+str(time) + " iteration " + str(al_iter))
+        plt.ylabel("PRE")
+        plt.xlabel("x")
+        plt.legend()
+        plt.savefig(os.path.join(save_path, "PRE_slice_t" + str(time) + "_al_it" + str(al_iter) + "_" + str(data_idx) + ".png"))
+        plt.show()
 
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
 def main(cfg: DictConfig):
 
     num_al_iter =  cfg.num_al_iter
+    times_to_plot = [3,15,35,38]
 
     for al_iter in range(1,num_al_iter):
         print("AL iter", al_iter)
@@ -138,11 +159,13 @@ def main(cfg: DictConfig):
         
         PRE_after_dict = {}
         for data_idx in ground_truth_pred:
-            PRE_after_dict[data_idx] =prob_model.residual(*pred_after_current_iter[data_idx]).squeeze()
+            PRE_after_dict[data_idx] = prob_model.residual(*pred_after_current_iter[data_idx]).squeeze()
 
         for data_idx in ground_truth_pred:
-            save_path = os.path.join(run_save_path, "img", "PRE_comp_it_" + str(al_iter) + "_" + str(data_idx) + ".png")
-            plot_PRE_comp(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], save_path)
+            save_path = os.path.join(run_save_path, "img")
+            plot_PRE_comp(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], al_iter, data_idx, save_path)
+            plot_PRE_slice(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], times_to_plot, al_iter, data_idx, save_path)
+
 
         PRE_after_dict = PRE_before_dict
         pred_after_last_iter = pred_after_current_iter
