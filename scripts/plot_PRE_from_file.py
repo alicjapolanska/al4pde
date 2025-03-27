@@ -18,11 +18,81 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.prob_models.build_prob_model import build_prob_model
 import matplotlib.pyplot as plt
 
+
+def calculate_mean_PRE_v_t(prob_model):
+    """Calculate PRE averaged over the validation set and x over time for prob_model."""
+
+    created_summary_arr = False
+    num_batches = 0
+
+    with torch.no_grad():
+        for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(prob_model.val_loader):
+            num_batches += 1
+
+            xx = xx.to(device)
+            grid = grid.to(device)
+            param = param.to(device)
+            t_idx = t_idx.to(device)
+
+            pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
+            pred = prob_model.model.task_norm.denorm_traj(pred)
+            unc = prob_model.residual(pred, param).squeeze() #squeeze out channel dim of size 1
+            unc_av = torch.mean(unc, dim=(0,1)) #mean over batch and x
+
+            unc_sim = prob_model.residual(yy, param).squeeze() #squeeze out channel dim of size 1
+            unc_av_sim = torch.mean(unc_sim, dim=(0,1)) #mean over batch and x
+
+            if not created_summary_arr:
+                unc_av_all = torch.zeros_like(unc_av)
+                unc_av_sim_all = torch.zeros_like(unc_av_sim)
+                created_summary_arr = True
+            
+            unc_av_all += unc_av
+            unc_av_sim_all += unc_av_sim
+        
+    unc_av_all *= 1/num_batches
+    unc_av_sim_all *= 1/num_batches
+
+    return unc_av_all, unc_av_sim_all
+
+def plot_mean_PRE_v_t(unc_av_all, unc_av_sim_all, al_iter, save_path):
+    """Plot the average PRE over time for model and simulation.
+
+        Inputs:
+            unc_av_all - PRE averaged over batch dimension and x for model 
+                prediction, vector of size Nt
+
+            unc_av_sim_all - PRE averaged over batch dimension and x for 
+                simulation (ground truth), vector of size Nt
+
+            al_iter (int) - active learning iteration the model is from
+
+            save_path (str) - path where figure should be saved """
+
+    if not unc_av_all.device == "cpu":
+        unc_av_all = unc_av_all.to("cpu")
+    if not unc_av_sim_all.device == "cpu":
+        unc_av_sim_all = unc_av_sim_all.to("cpu")
+
+    # Define t axis
+    Nt = len(unc_av_all)
+    t_vals = np.arange(Nt)
+    
+    fig, ax = plt.subplots()
+    plt.plot(t_vals, unc_av_sim_all, "--", label="Simulation")
+    plt.plot(t_vals, unc_av_all, "--", label="Model after iteration")
+    plt.title("Average PRE over time for iteration " + str(al_iter))
+    plt.ylabel("PRE")
+    plt.xlabel("t")
+    plt.legend()
+    plt.savefig(os.path.join(save_path, "PRE_v_t_al_it" + str(al_iter) + ".png"))
+    plt.show()
+
+
 def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, al_iter, data_idx, save_path):
     """Plot PRE as heatmaps for a data instance over all time steps.
         Assumes PRE has shape (Nx, Nt)."""
     
-
 
     # Define x and t axes
     Nx, Nt = PRE_before.shape
@@ -138,6 +208,11 @@ def main(cfg: DictConfig):
             for data_idx in ground_truth_pred:
                 PRE_traj_dict[data_idx] = prob_model.residual(*ground_truth_pred[data_idx]).squeeze()
                 PRE_before_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
+            
+            save_path = os.path.join(run_save_path, "img")
+            print("Calculating mean PRE v t")
+            PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+            plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
         cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
         prob_model = build_prob_model(task, cfg.prob_model)
@@ -169,6 +244,10 @@ def main(cfg: DictConfig):
 
         PRE_after_dict = PRE_before_dict
         pred_after_last_iter = pred_after_current_iter
+
+        print("Calculating mean PRE v t")
+        PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+        plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
 
 if __name__ == "__main__":
     main()
