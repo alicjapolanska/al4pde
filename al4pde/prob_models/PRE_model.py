@@ -27,11 +27,6 @@ class PREModel(ProbModel):
         self.model = model_cfg
         self.stats.append(UncAvg("unc")) 
         self.stats.append(LossUncCorr("corr_unc_loss", self.loss))
-        self.current_bad_predictions = {}
-        self.current_good_predictions = {}
-        self.current_ground_truths = {}
-        self.num_to_plot = num_to_plot #number of idx that will be randomly picked if idxs to plot is None
-        self.idxs_to_plot = idxs_to_plot
     
     def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
@@ -98,16 +93,6 @@ class PREModel(ProbModel):
         self.task_norm = self.model.task_norm
         print("PRE task norm is ", self.task_norm)
 
-
-    def choose_idxs_to_plot(self):
-        """Choose self.num_to_plot number if random points from the validation set to plot. 
-            Saved in self.idx_to_plot. If self.num_to_plot is bigger than validation dataset size,
-            return all indices in the dataset size."""
-        
-        dataset_size = len(self.val_loader.dataset)  # Total number of samples
-        self.idxs_to_plot = set(random.sample(range(dataset_size), min(self.num_to_plot, dataset_size)))
-
-
     def train_n_epoch(self, al_iter: int, num_epoch: int, step_offset: int, vis: bool = True,
                       prefix: str = "", is_last=False) -> float:
         """ Train model for num_epoch epochs.
@@ -122,9 +107,6 @@ class PREModel(ProbModel):
         self.model.init_training(al_iter) #Basically the same as the one in model but it's self.model.init_training
         self.task_norm = self.model.task_norm
         
-        if vis:
-            if self.idxs_to_plot is None:
-                self.choose_idxs_to_plot()
 
         for i in range(num_epoch):
             t = time.time()
@@ -135,23 +117,6 @@ class PREModel(ProbModel):
             if vis:
                 if (i > 0 and i % self.vis_period == 0) or i == num_epoch - 1:
                     self.visualize(step_offset + i)
-            if i==2:
-                if vis:
-                    # Calculate prediction at second step
-                    print("Calculating bad model prediction")
-                    self.calculate_current_predictions(model_trained = False)
-        
-        if vis:
-            # Calculate prediction after training
-            print("Calculating good model prediction")
-            self.calculate_current_predictions(model_trained = True)
-            print("Plot PRE comparison over trajectories")
-            self.plot_PRE(add_to_label = "_" + str(al_iter))
-        
-            # Reset prediction to plot PRE for
-            self.current_bad_predictions = {}
-            self.current_good_predictions = {}
-            self.current_ground_truths = {}
         
         return total_time
         
@@ -171,112 +136,7 @@ class PREModel(ProbModel):
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
 
-    def plot_PRE(self, add_to_label: str = None):
-        """Plot PRE as heatmaps for a data instance over all time steps.
-        Assumes trajectory has shape (1, Nx, Nt, 1).
-        
-            add_to_label (str): string that will be appended at the end of the plots' filenames"""
-        
 
-        for data_idx in self.current_ground_truths:
-
-            PRE_traj = self.residual(*self.current_ground_truths[data_idx]).squeeze()  # Compute residuals
-            PRE_before = self.residual(*self.current_bad_predictions[data_idx]).squeeze()  # Compute residuals
-            PRE_after = self.residual(*self.current_good_predictions[data_idx]).squeeze()  # Compute residuals
-
-            # Define x and t axes
-            Nx, Nt = PRE_before.shape
-            x_vals = np.arange(Nx)  # Spatial dimension
-            t_vals = np.arange(Nt)  # Time dimension
-            
-            # Set consistent color scale
-            vmin = min(PRE_before.min(), PRE_traj.min(), PRE_after.min())
-            vmax = max(PRE_before.max(), PRE_traj.max(), PRE_after.max())
-
-            # Create figure with 3 subplots
-            fig, axes = plt.subplots(1, 3, figsize=(24, 5), constrained_layout=True)
-
-            # Plot "Before Training" heatmap
-            im1 = axes[0].imshow(PRE_before, aspect='auto', origin='lower', cmap='coolwarm',
-                                extent=[t_vals.min(), t_vals.max(), x_vals.min(), x_vals.max()],
-                                vmin=vmin, vmax=vmax)
-            axes[0].set_xlabel("Time")
-            axes[0].set_ylabel("x")
-            axes[0].set_yticks([])
-            axes[0].set_title("PRE Before Training")
-
-            # Plot "Ground Truth" heatmap
-            im2 = axes[1].imshow(PRE_traj, aspect='auto', origin='lower', cmap='coolwarm',
-                                extent=[t_vals.min(), t_vals.max(), x_vals.min(), x_vals.max()],
-                                vmin=vmin, vmax=vmax)
-            axes[1].set_xlabel("Time")
-            axes[1].set_yticks([])
-            axes[1].set_title("Ground Truth PRE")
-
-            # Plot "After Training" heatmap
-            im3 = axes[2].imshow(PRE_after, aspect='auto', origin='lower', cmap='coolwarm',
-                                extent=[t_vals.min(), t_vals.max(), x_vals.min(), x_vals.max()],
-                                vmin=vmin, vmax=vmax)
-            axes[2].set_xlabel("Time")
-            axes[2].set_yticks([])
-            axes[2].set_title("PRE After Training")
-
-            # Add shared colorbar
-            cbar = fig.colorbar(im3, ax=axes, orientation='vertical', fraction=0.02)
-            cbar.set_label("PRE Value")
-
-            # Save and show plot
-            plt.savefig(os.path.join(self.task.img_save_path, "PRE_comp_" + str(data_idx) + add_to_label + ".png"))
-            plt.show()
-
-
-    def calculate_current_predictions(self, model_trained: bool = False):
-        """Calculate predictions of the model and store them as a class attribute, as well as the corresponding ground truths (if model_trained is False). 
-
-            model_trained (bool): Whether model is trained or not. Determines if predictions are stored in 
-                current_bad_predictions (False) or current_good_predictions (True). If False, ground truths 
-                are also added to self.current_ground_truths. Defaults to False.
-
-            """
-
-        chosen_indices = self.idxs_to_plot.copy()
-        current_idx = 0  # Track global index in dataset
-        predictions = {}
-
-        with torch.no_grad():
-            for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(self.val_loader):
-                batch_size = xx.shape[0]
-
-                for i in range(batch_size):
-                    if current_idx in chosen_indices:
-                        sample_traj = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
-                        pde_param = param[i, :].item()
-
-                        if not model_trained:
-                            self.current_ground_truths[current_idx] = [sample_traj, pde_param]
-
-                        xx = xx.to(device)
-                        grid = grid.to(device)
-                        param = param.to(device)
-                        t_idx = t_idx.to(device)
-                        pred = self.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
-                        pred = pred.to("cpu")
-
-                        predictions[current_idx] = [pred, pde_param]
-
-
-                        chosen_indices.remove(current_idx)  # Remove so we stop early if needed
-                        if not chosen_indices:  # Stop once we've processed all chosen indices
-                            if not model_trained:
-                                print("Saving bad predictions.")
-                                self.current_bad_predictions = predictions
-                            print("Model trained is ", model_trained)
-                            if model_trained:
-                                print("Saving good predictions.")
-                                self.current_good_predictions = predictions
-                            return
-
-                    current_idx += 1  # Update global index across batches
 
 def build_PREModel(task, cfg):
     model = build_wrapper(task, cfg.model_wrapper)
