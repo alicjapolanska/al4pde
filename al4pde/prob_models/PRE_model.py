@@ -255,7 +255,6 @@ class PREModel(ProbModel):
                         if not model_trained:
                             self.current_ground_truths[current_idx] = [sample_traj, pde_param]
 
-                        #plot rolled out timestep
                         xx = xx.to(device)
                         grid = grid.to(device)
                         param = param.to(device)
