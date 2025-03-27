@@ -8,6 +8,7 @@ import jax.numpy as jnp
 jnp.arange(0, 100)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from jax.lib import xla_bridge
+import random
 
 sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
 
@@ -18,6 +19,55 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.prob_models.build_prob_model import build_prob_model
 import matplotlib.pyplot as plt
 
+
+def choose_idxs_to_plot(prob_model, num_to_plot):
+    """Choose num_to_plot number if random points from the validation set to plot.
+        If num_to_plot is bigger than validation dataset size,
+        return all indices in the dataset size. Returns a set of indices."""
+    
+    dataset_size = len(prob_model.val_loader.dataset)  # Total number of samples
+    idxs_to_plot = set(random.sample(range(dataset_size), min(num_to_plot, dataset_size)))
+
+    return idxs_to_plot
+
+
+def calculate_current_predictions(prob_model, idxs_to_plot, model_trained: bool = False):
+    """Returns dictionary with keys being indices of datapoints in validation set and 
+            items being a list of the trajectory and pde param. Returns tuple containing 
+            dictionary for model predictions and ground truths respectively.
+        """
+
+    chosen_indices = idxs_to_plot.copy()
+    current_idx = 0  # Track global index in dataset
+    ground_truths = {}
+    predictions = {}
+
+    with torch.no_grad():
+        for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(prob_model.val_loader):
+            batch_size = xx.shape[0]
+
+            for i in range(batch_size):
+                if current_idx in chosen_indices:
+                    sample_traj = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
+                    pde_param = param[i, :].item()
+
+                    ground_truths[current_idx] = [sample_traj, pde_param]
+
+                    xx = xx.to(device)
+                    grid = grid.to(device)
+                    param = param.to(device)
+                    t_idx = t_idx.to(device)
+                    pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
+                    pred = pred.to("cpu")
+
+                    predictions[current_idx] = [pred, pde_param]
+
+
+                    chosen_indices.remove(current_idx)  # Remove so we stop early if needed
+                    if not chosen_indices:  # Stop once we've processed all chosen indices
+                        return predictions, ground_truths
+
+                current_idx += 1  # Update global index across batches
 
 def calculate_mean_PRE_v_t(prob_model):
     """Calculate PRE averaged over the validation set and x over time for prob_model."""
