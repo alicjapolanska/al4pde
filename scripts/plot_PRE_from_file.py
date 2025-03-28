@@ -31,10 +31,10 @@ def choose_idxs_to_plot(prob_model, num_to_plot):
     return idxs_to_plot
 
 
-def calculate_current_predictions(prob_model, idxs_to_plot, model_trained: bool = False):
+def calculate_current_predictions(prob_model, idxs_to_plot):
     """Returns dictionary with keys being indices of datapoints in validation set and 
             items being a list of the trajectory and pde param. Returns tuple containing 
-            dictionary for model predictions and ground truths respectively.
+            dictionary for unnormalized model predictions and ground truths respectively.
         """
 
     chosen_indices = idxs_to_plot.copy()
@@ -58,6 +58,7 @@ def calculate_current_predictions(prob_model, idxs_to_plot, model_trained: bool 
                     param = param.to(device)
                     t_idx = t_idx.to(device)
                     pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
+                    pred = prob_model.model.task_norm.denorm_traj(pred)
                     pred = pred.to("cpu")
 
                     predictions[current_idx] = [pred, pde_param]
@@ -217,7 +218,8 @@ def plot_PRE_slice(PRE_traj, PRE_before, PRE_after, times_to_plot, al_iter, data
 def main(cfg: DictConfig):
 
     num_al_iter =  cfg.num_al_iter
-    times_to_plot = [3,15,35,38]
+    times_to_plot = [3,15,35,38] 
+    num_to_plot = 3 #how many datapoints to choose from val set
 
     for al_iter in range(1,num_al_iter):
         print("AL iter", al_iter)
@@ -231,7 +233,7 @@ def main(cfg: DictConfig):
         run_save_path = os.path.join(cfg.task.run_save_path, run_id)
         task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
 
-        # previous
+        # Include zeroth iteration
         if al_iter == 1:
             cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
             prob_model = build_prob_model(task, cfg.prob_model)
@@ -244,14 +246,10 @@ def main(cfg: DictConfig):
             print("Prob model keys:", prob_model.state_dict().keys())
 
             # Choose idxs at random and keep them constant
-            prob_model.choose_idxs_to_plot()
-            idxs_to_plot = prob_model.idxs_to_plot
+            idxs_to_plot = choose_idxs_to_plot(prob_model, num_to_plot)
 
-            prob_model.calculate_current_predictions(model_trained= False)
-            prob_model.calculate_current_predictions(model_trained= True)
             # predictions after 0th iter
-            pred_after_last_iter = prob_model.current_good_predictions
-            ground_truth_pred = prob_model.current_ground_truths
+            pred_after_last_iter, ground_truth_pred = calculate_current_predictions(prob_model, idxs_to_plot)
 
             PRE_traj_dict = {}
             PRE_before_dict = {}
@@ -276,11 +274,7 @@ def main(cfg: DictConfig):
         print("Task norm is ", prob_model.task_norm)
         prob_model.load_state_dict(save_dict['model'])
 
-        # Choose idxs at random and keep them constant
-        prob_model.idxs_to_plot = idxs_to_plot
-
-        prob_model.calculate_current_predictions(model_trained= True)
-        pred_after_current_iter = prob_model.current_good_predictions
+        pred_after_current_iter, temp = calculate_current_predictions(prob_model, idxs_to_plot)
         
         PRE_after_dict = {}
         for data_idx in ground_truth_pred:
