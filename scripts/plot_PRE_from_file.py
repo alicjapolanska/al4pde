@@ -286,12 +286,12 @@ def main(cfg: DictConfig):
             plot_PRE_slice(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], times_to_plot, al_iter, data_idx, save_path)
 
 
-        PRE_after_dict = PRE_before_dict
-        pred_after_last_iter = pred_after_current_iter
-
         print("Calculating mean PRE v t")
         PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
         plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
+
+        PRE_before_dict = PRE_after_dict
+        pred_after_last_iter = pred_after_current_iter
 
 if __name__ == "__main__":
     main()
