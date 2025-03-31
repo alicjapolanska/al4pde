@@ -58,7 +58,7 @@ def calculate_current_predictions(prob_model, idxs_to_plot):
                     param = param.to(device)
                     t_idx = t_idx.to(device)
                     pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
-                    pred = prob_model.model.task_norm.denorm_traj(pred)
+                    #pred = prob_model.model.task_norm.denorm_traj(pred)
                     pred = pred.to("cpu")
 
                     predictions[current_idx] = [pred, pde_param]
@@ -87,7 +87,7 @@ def calculate_mean_PRE_v_t(prob_model):
             yy = yy.to(device)
 
             pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
-            pred = prob_model.model.task_norm.denorm_traj(pred)
+            #pred = prob_model.model.task_norm.denorm_traj(pred)
             unc = prob_model.residual(pred, param).squeeze() #squeeze out channel dim of size 1
             unc_av = torch.mean(unc, dim=(0,1)) #mean over batch and x
 
