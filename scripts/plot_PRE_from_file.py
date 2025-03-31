@@ -84,6 +84,7 @@ def calculate_mean_PRE_v_t(prob_model):
             grid = grid.to(device)
             param = param.to(device)
             t_idx = t_idx.to(device)
+            yy = yy.to(device)
 
             pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
             pred = prob_model.model.task_norm.denorm_traj(pred)
@@ -93,18 +94,24 @@ def calculate_mean_PRE_v_t(prob_model):
             unc_sim = prob_model.residual(yy, param).squeeze() #squeeze out channel dim of size 1
             unc_av_sim = torch.mean(unc_sim, dim=(0,1)) #mean over batch and x
 
+            err = (unc-unc_sim)**2 
+            err_av = torch.mean(err, dim=(0,1)) #mean over batch and x
+
             if not created_summary_arr:
                 unc_av_all = torch.zeros_like(unc_av)
                 unc_av_sim_all = torch.zeros_like(unc_av_sim)
+                err_av_all = torch.zeros_like(err_av)
                 created_summary_arr = True
             
             unc_av_all += unc_av
             unc_av_sim_all += unc_av_sim
+            err_av_all += err_av
         
     unc_av_all *= 1/num_batches
     unc_av_sim_all *= 1/num_batches
+    err_av_all *= 1/num_batches
 
-    return unc_av_all, unc_av_sim_all
+    return unc_av_all, unc_av_sim_all, err_av_all
 
 def plot_mean_PRE_v_t(unc_av_all, unc_av_sim_all, al_iter, save_path):
     """Plot the average PRE over time for model and simulation.
@@ -137,6 +144,33 @@ def plot_mean_PRE_v_t(unc_av_all, unc_av_sim_all, al_iter, save_path):
     plt.xlabel("t")
     plt.legend()
     plt.savefig(os.path.join(save_path, "PRE_v_t_al_it" + str(al_iter) + ".png"))
+    plt.show()
+
+def plot_mean_PRE_MSE_v_t(err_av_all, al_iter, save_path):
+    """Plot the average PRE MSE of model wrt simulation over time.
+
+        Inputs:
+            unc_av_all - (model PRE - simulation PRE)^2 averaged over 
+                batch dimension and x, vector of size Nt
+
+            al_iter (int) - active learning iteration the model is from
+
+            save_path (str) - path where figure should be saved """
+
+    if not err_av_all.device == "cpu":
+        err_av_all = err_av_all.to("cpu")
+
+    # Define t axis
+    Nt = len(err_av_all)
+    t_vals = np.arange(Nt)
+    
+    fig, ax = plt.subplots()
+    plt.plot(t_vals, err_av_all, "--")
+    plt.title("Average PRE MSE over time for iteration " + str(al_iter))
+    plt.ylabel("(model PRE - simulation PRE)^2")
+    plt.xlabel("t")
+    plt.legend()
+    plt.savefig(os.path.join(save_path, "PRE_MSE_v_t_al_it" + str(al_iter) + ".png"))
     plt.show()
 
 
@@ -242,8 +276,10 @@ def main(cfg: DictConfig):
             prob_model.init_training(al_iter-1)
             print("Task norm is ", prob_model.task_norm)
             prob_model.load_state_dict(save_dict['model'])
-            print("Model keys:", prob_model.model.state_dict().keys())
+            print("Prob model dict keys ", save_dict.keys())
+            print("Model dict keys ", save_dict['model'].keys())
             print("Prob model keys:", prob_model.state_dict().keys())
+            print("Model keys:", prob_model.model.state_dict().keys())
 
             # Choose idxs at random and keep them constant
             idxs_to_plot = choose_idxs_to_plot(prob_model, num_to_plot)
@@ -259,7 +295,7 @@ def main(cfg: DictConfig):
             
             save_path = os.path.join(run_save_path, "img")
             print("Calculating mean PRE v t")
-            PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+            PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
             plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
         cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
@@ -287,8 +323,9 @@ def main(cfg: DictConfig):
 
 
         print("Calculating mean PRE v t")
-        PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+        PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
         plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
+        plot_mean_PRE_MSE_v_t(PRE_MSE, al_iter, save_path)
 
         PRE_before_dict = PRE_after_dict
         pred_after_last_iter = pred_after_current_iter
