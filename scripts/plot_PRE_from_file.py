@@ -9,6 +9,7 @@ jnp.arange(0, 100)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from jax.lib import xla_bridge
 import random
+from types import MethodType
 
 sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
 
@@ -19,6 +20,32 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.prob_models.build_prob_model import build_prob_model
 import matplotlib.pyplot as plt
 
+
+
+def read_in_model(cfg, al_iter):
+
+    run_save_path = os.path.join(cfg.task.run_save_path, cfg.checkpoint_id)
+
+    task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
+
+    cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
+    prob_model = build_prob_model(task, cfg.prob_model)
+
+    save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
+    prob_model.init_training(0)
+    #print("Task norm is ", prob_model.task_norm)
+    prob_model.load_state_dict(save_dict['model'])
+    #print("Prob model dict keys ", save_dict.keys())
+    #print("Model dict keys ", save_dict['model'].keys())
+    #print("Prob model keys:", prob_model.state_dict().keys())
+    #print("Model keys:", prob_model.model.state_dict().keys())
+
+    if type(prob_model).__name__ == 'Ensemble':
+
+        prob_model.residual = MethodType(PREModel.residual, prob_model)
+
+    return prob_model, run_save_path
+    
 
 def choose_idxs_to_plot(prob_model, num_to_plot):
     """Choose num_to_plot number if random points from the validation set to plot.
@@ -57,8 +84,7 @@ def calculate_current_predictions(prob_model, idxs_to_plot):
                     grid = grid.to(device)
                     param = param.to(device)
                     t_idx = t_idx.to(device)
-                    pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
-                    #pred = prob_model.model.task_norm.denorm_traj(pred)
+                    pred = prob_model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)                
                     pred = pred.to("cpu")
 
                     predictions[current_idx] = [pred, pde_param]
@@ -86,8 +112,7 @@ def calculate_mean_PRE_v_t(prob_model):
             t_idx = t_idx.to(device)
             yy = yy.to(device)
 
-            pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
-            #pred = prob_model.model.task_norm.denorm_traj(pred)
+            pred = prob_model.roll_out(xx, grid, yy.shape[2], param, t_idx)
             unc = prob_model.residual(pred, param).squeeze() #squeeze out channel dim of size 1
             unc_av = torch.mean(unc, dim=(0,1)) #mean over batch and x
 
@@ -257,29 +282,15 @@ def main(cfg: DictConfig):
 
     for al_iter in range(1,num_al_iter):
         print("AL iter", al_iter)
-        run_id = cfg.checkpoint_id
 
-
-        print("run_id", run_id, flush=True)
+        print("run_id", cfg.checkpoint_id, flush=True)
         print("torch_device", device)
         print("jax_dev", xla_bridge.get_backend().platform, flush=True)
 
-        run_save_path = os.path.join(cfg.task.run_save_path, run_id)
-        task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
-
         # Include zeroth iteration
         if al_iter == 1:
-            cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
-            prob_model = build_prob_model(task, cfg.prob_model)
 
-            save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter-1)+".pt"))
-            prob_model.init_training(al_iter-1)
-            print("Task norm is ", prob_model.task_norm)
-            prob_model.load_state_dict(save_dict['model'])
-            print("Prob model dict keys ", save_dict.keys())
-            print("Model dict keys ", save_dict['model'].keys())
-            print("Prob model keys:", prob_model.state_dict().keys())
-            print("Model keys:", prob_model.model.state_dict().keys())
+            prob_model, run_save_path = read_in_model(cfg, al_iter-1)
 
             # Choose idxs at random and keep them constant
             idxs_to_plot = choose_idxs_to_plot(prob_model, num_to_plot)
@@ -290,7 +301,7 @@ def main(cfg: DictConfig):
             PRE_traj_dict = {}
             PRE_before_dict = {}
             for data_idx in ground_truth_pred:
-                PRE_traj_dict[data_idx] = prob_model.residual(*ground_truth_pred[data_idx]).squeeze()
+                PRE_traj_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
                 PRE_before_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
             
             save_path = os.path.join(run_save_path, "img")
@@ -298,17 +309,7 @@ def main(cfg: DictConfig):
             PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
             plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
-        cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
-        prob_model = build_prob_model(task, cfg.prob_model)
-
-        save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
-
-        prob_model.init_training(0)
-
-        print("Model keys:", prob_model.model.state_dict().keys())
-        print("Prob model keys:", prob_model.state_dict().keys())
-        print("Task norm is ", prob_model.task_norm)
-        prob_model.load_state_dict(save_dict['model'])
+        prob_model, run_save_path = read_in_model(cfg, al_iter)
 
         pred_after_current_iter, temp = calculate_current_predictions(prob_model, idxs_to_plot)
         
