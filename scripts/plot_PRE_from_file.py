@@ -168,6 +168,7 @@ def plot_mean_PRE_MSE_v_t(err_av_all, al_iter, save_path):
     plt.plot(t_vals, err_av_all, "--")
     plt.title("Average PRE MSE over time for iteration " + str(al_iter))
     plt.ylabel("(model PRE - simulation PRE)^2")
+    ax.set_yscale('log')
     plt.xlabel("t")
     plt.legend()
     plt.savefig(os.path.join(save_path, "PRE_MSE_v_t_al_it" + str(al_iter) + ".png"))
