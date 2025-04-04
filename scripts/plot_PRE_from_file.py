@@ -1,11 +1,7 @@
 import numpy as np
 import os
 import sys 
-import wandb
-wandb.init(mode="offline")
 import torch
-import jax.numpy as jnp
-jnp.arange(0, 100)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from jax.lib import xla_bridge
 import random
@@ -274,12 +270,59 @@ def plot_PRE_slice(PRE_traj, PRE_before, PRE_after, times_to_plot, al_iter, data
         plt.savefig(os.path.join(save_path, "PRE_slice_t" + str(time) + "_al_it" + str(al_iter) + "_" + str(data_idx) + ".png"))
         plt.show()
 
+def plot_PRE_al(pre_av, save_path):
+    """Plot the average PRE of model and simulation over active learning iterations.
+
+        Inputs:
+            pre_av - model PRE (row 0) and simulation PRE (row 1) averaged over 
+                batch dimension, x and t
+
+            save_path (str) - path where figure should be saved """
+
+    num_al_iter = pre_av.shape[1]
+    iter_vals = np.arange(num_al_iter)
+    
+    fig, ax = plt.subplots()
+    plt.plot(iter_vals, pre_av[0,:], "--", label = "Model")
+    plt.plot(iter_vals, pre_av[1,:], "--", label = "Simulation")
+    plt.title("Average PRE")
+    plt.ylabel("PRE")
+    plt.xlabel("al iteration")
+    plt.legend()
+    plt.savefig(os.path.join(save_path, "PRE_al.png"))
+    plt.show()
+
+
+def plot_PRE_MSE_al(pre_mse_av, save_path):
+    """Plot the average PRE MSE of model wrt simulation.
+
+        Inputs:
+            unc_av_all - (model PRE - simulation PRE)^2 averaged over 
+                batch dimension and x, vector of size Nt
+
+            al_iter (int) - active learning iteration the model is from
+
+            save_path (str) - path where figure should be saved """
+
+    num_al_iter = len(pre_mse_av)
+    iter_vals = np.arange(num_al_iter)
+    
+    fig, ax = plt.subplots()
+    plt.plot(iter_vals, pre_mse_av, "--")
+    plt.title("Average PRE MSE")
+    plt.ylabel("(model PRE - simulation PRE)^2")
+    plt.xlabel("al iteration")
+    plt.savefig(os.path.join(save_path, "PRE_MSE_al.png"))
+    plt.show()
+
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
 def main(cfg: DictConfig):
 
     num_al_iter =  cfg.num_al_iter
     times_to_plot = [3,15,35,38] 
     num_to_plot = 3 #how many datapoints to choose from val set
+    PRE_summary = np.zeros((2,num_al_iter+1))
+    PRE_MSE_summary = np.zeros(num_al_iter+1) 
 
     for al_iter in range(1,num_al_iter):
         print("AL iter", al_iter)
@@ -308,6 +351,9 @@ def main(cfg: DictConfig):
             save_path = os.path.join(run_save_path, "img")
             print("Calculating mean PRE v t")
             PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
+            PRE_summary[0,0] = np.mean(PRE_av)
+            PRE_summary[1,0] = np.mean(PRE_av_sim)
+            PRE_MSE_summary[0] = np.mean(PRE_MSE)
             plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
         prob_model, run_save_path = read_in_model(cfg, al_iter)
@@ -329,8 +375,15 @@ def main(cfg: DictConfig):
         plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
         plot_mean_PRE_MSE_v_t(PRE_MSE, al_iter, save_path)
 
+        PRE_summary[0,al_iter] = np.mean(PRE_av)
+        PRE_summary[1,al_iter] = np.mean(PRE_av_sim)
+        PRE_MSE_summary[al_iter] = np.mean(PRE_MSE)
+
         PRE_before_dict = PRE_after_dict
         pred_after_last_iter = pred_after_current_iter
+
+    plot_PRE_al(PRE_summary, save_path)
+    plot_PRE_MSE_al(PRE_MSE_summary, save_path)
 
 if __name__ == "__main__":
     main()
