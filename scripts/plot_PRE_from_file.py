@@ -1,14 +1,11 @@
 import numpy as np
 import os
 import sys 
-import wandb
-wandb.init(mode="offline")
 import torch
-import jax.numpy as jnp
-jnp.arange(0, 100)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from jax.lib import xla_bridge
 import random
+from types import MethodType
 
 sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
 
@@ -19,6 +16,32 @@ from al4pde.prob_models.PRE_model import PREModel
 from al4pde.prob_models.build_prob_model import build_prob_model
 import matplotlib.pyplot as plt
 
+
+
+def read_in_model(cfg, al_iter):
+
+    run_save_path = os.path.join(cfg.task.run_save_path, cfg.checkpoint_id)
+
+    task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
+
+    cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
+    prob_model = build_prob_model(task, cfg.prob_model)
+
+    save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
+    prob_model.init_training(0)
+    #print("Task norm is ", prob_model.task_norm)
+    prob_model.load_state_dict(save_dict['model'])
+    #print("Prob model dict keys ", save_dict.keys())
+    #print("Model dict keys ", save_dict['model'].keys())
+    #print("Prob model keys:", prob_model.state_dict().keys())
+    #print("Model keys:", prob_model.model.state_dict().keys())
+
+    if type(prob_model).__name__ == 'Ensemble':
+
+        prob_model.residual = MethodType(PREModel.residual, prob_model)
+
+    return prob_model, run_save_path
+    
 
 def choose_idxs_to_plot(prob_model, num_to_plot):
     """Choose num_to_plot number if random points from the validation set to plot.
@@ -57,8 +80,7 @@ def calculate_current_predictions(prob_model, idxs_to_plot):
                     grid = grid.to(device)
                     param = param.to(device)
                     t_idx = t_idx.to(device)
-                    pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)
-                    pred = prob_model.model.task_norm.denorm_traj(pred)
+                    pred = prob_model.roll_out(xx, grid, yy.shape[2], param, t_idx)[i, :, :, :].unsqueeze(0)                
                     pred = pred.to("cpu")
 
                     predictions[current_idx] = [pred, pde_param]
@@ -84,27 +106,33 @@ def calculate_mean_PRE_v_t(prob_model):
             grid = grid.to(device)
             param = param.to(device)
             t_idx = t_idx.to(device)
+            yy = yy.to(device)
 
-            pred = prob_model.model.roll_out(xx, grid, yy.shape[2], param, t_idx)
-            pred = prob_model.model.task_norm.denorm_traj(pred)
+            pred = prob_model.roll_out(xx, grid, yy.shape[2], param, t_idx)
             unc = prob_model.residual(pred, param).squeeze() #squeeze out channel dim of size 1
             unc_av = torch.mean(unc, dim=(0,1)) #mean over batch and x
 
             unc_sim = prob_model.residual(yy, param).squeeze() #squeeze out channel dim of size 1
             unc_av_sim = torch.mean(unc_sim, dim=(0,1)) #mean over batch and x
 
+            err = (unc-unc_sim)**2 
+            err_av = torch.mean(err, dim=(0,1)) #mean over batch and x
+
             if not created_summary_arr:
                 unc_av_all = torch.zeros_like(unc_av)
                 unc_av_sim_all = torch.zeros_like(unc_av_sim)
+                err_av_all = torch.zeros_like(err_av)
                 created_summary_arr = True
             
             unc_av_all += unc_av
             unc_av_sim_all += unc_av_sim
+            err_av_all += err_av
         
     unc_av_all *= 1/num_batches
     unc_av_sim_all *= 1/num_batches
+    err_av_all *= 1/num_batches
 
-    return unc_av_all, unc_av_sim_all
+    return unc_av_all, unc_av_sim_all, err_av_all
 
 def plot_mean_PRE_v_t(unc_av_all, unc_av_sim_all, al_iter, save_path):
     """Plot the average PRE over time for model and simulation.
@@ -137,6 +165,34 @@ def plot_mean_PRE_v_t(unc_av_all, unc_av_sim_all, al_iter, save_path):
     plt.xlabel("t")
     plt.legend()
     plt.savefig(os.path.join(save_path, "PRE_v_t_al_it" + str(al_iter) + ".png"))
+    plt.show()
+
+def plot_mean_PRE_MSE_v_t(err_av_all, al_iter, save_path):
+    """Plot the average PRE MSE of model wrt simulation over time.
+
+        Inputs:
+            unc_av_all - (model PRE - simulation PRE)^2 averaged over 
+                batch dimension and x, vector of size Nt
+
+            al_iter (int) - active learning iteration the model is from
+
+            save_path (str) - path where figure should be saved """
+
+    if not err_av_all.device == "cpu":
+        err_av_all = err_av_all.to("cpu")
+
+    # Define t axis
+    Nt = len(err_av_all)
+    t_vals = np.arange(Nt)
+    
+    fig, ax = plt.subplots()
+    plt.plot(t_vals, err_av_all, "--")
+    plt.title("Average PRE MSE over time for iteration " + str(al_iter))
+    plt.ylabel("(model PRE - simulation PRE)^2")
+    ax.set_yscale('log')
+    plt.xlabel("t")
+    plt.legend()
+    plt.savefig(os.path.join(save_path, "PRE_MSE_v_t_al_it" + str(al_iter) + ".png"))
     plt.show()
 
 
@@ -214,36 +270,71 @@ def plot_PRE_slice(PRE_traj, PRE_before, PRE_after, times_to_plot, al_iter, data
         plt.savefig(os.path.join(save_path, "PRE_slice_t" + str(time) + "_al_it" + str(al_iter) + "_" + str(data_idx) + ".png"))
         plt.show()
 
+def plot_PRE_al(pre_av, save_path):
+    """Plot the average PRE of model and simulation over active learning iterations.
+
+        Inputs:
+            pre_av - model PRE (row 0) and simulation PRE (row 1) averaged over 
+                batch dimension, x and t
+
+            save_path (str) - path where figure should be saved """
+
+    num_al_iter = pre_av.shape[1]
+    iter_vals = np.arange(num_al_iter)
+    
+    fig, ax = plt.subplots()
+    plt.plot(iter_vals, pre_av[0,:], "--", label = "Model")
+    plt.plot(iter_vals, pre_av[1,:], "--", label = "Simulation")
+    plt.title("Average PRE")
+    plt.ylabel("PRE")
+    plt.xlabel("al iteration")
+    plt.legend()
+    plt.savefig(os.path.join(save_path, "PRE_al.png"))
+    plt.show()
+
+
+def plot_PRE_MSE_al(pre_mse_av, save_path):
+    """Plot the average PRE MSE of model wrt simulation.
+
+        Inputs:
+            unc_av_all - (model PRE - simulation PRE)^2 averaged over 
+                batch dimension and x, vector of size Nt
+
+            al_iter (int) - active learning iteration the model is from
+
+            save_path (str) - path where figure should be saved """
+
+    num_al_iter = len(pre_mse_av)
+    iter_vals = np.arange(num_al_iter)
+    
+    fig, ax = plt.subplots()
+    plt.plot(iter_vals, pre_mse_av, "--")
+    plt.title("Average PRE MSE")
+    plt.ylabel("(model PRE - simulation PRE)^2")
+    plt.xlabel("al iteration")
+    plt.savefig(os.path.join(save_path, "PRE_MSE_al.png"))
+    plt.show()
+
 @hydra.main(version_base="1.3.2", config_path="../config", config_name="main")
 def main(cfg: DictConfig):
 
     num_al_iter =  cfg.num_al_iter
     times_to_plot = [3,15,35,38] 
     num_to_plot = 3 #how many datapoints to choose from val set
+    PRE_summary = np.zeros((2,num_al_iter+1))
+    PRE_MSE_summary = np.zeros(num_al_iter+1) 
 
     for al_iter in range(1,num_al_iter):
         print("AL iter", al_iter)
-        run_id = cfg.checkpoint_id
 
-
-        print("run_id", run_id, flush=True)
+        print("run_id", cfg.checkpoint_id, flush=True)
         print("torch_device", device)
         print("jax_dev", xla_bridge.get_backend().platform, flush=True)
 
-        run_save_path = os.path.join(cfg.task.run_save_path, run_id)
-        task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
-
         # Include zeroth iteration
         if al_iter == 1:
-            cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
-            prob_model = build_prob_model(task, cfg.prob_model)
 
-            save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter-1)+".pt"))
-            prob_model.init_training(al_iter-1)
-            print("Task norm is ", prob_model.task_norm)
-            prob_model.load_state_dict(save_dict['model'])
-            print("Model keys:", prob_model.model.state_dict().keys())
-            print("Prob model keys:", prob_model.state_dict().keys())
+            prob_model, run_save_path = read_in_model(cfg, al_iter-1)
 
             # Choose idxs at random and keep them constant
             idxs_to_plot = choose_idxs_to_plot(prob_model, num_to_plot)
@@ -254,25 +345,18 @@ def main(cfg: DictConfig):
             PRE_traj_dict = {}
             PRE_before_dict = {}
             for data_idx in ground_truth_pred:
-                PRE_traj_dict[data_idx] = prob_model.residual(*ground_truth_pred[data_idx]).squeeze()
+                PRE_traj_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
                 PRE_before_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
             
             save_path = os.path.join(run_save_path, "img")
             print("Calculating mean PRE v t")
-            PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+            PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
+            PRE_summary[0,0] = np.mean(PRE_av)
+            PRE_summary[1,0] = np.mean(PRE_av_sim)
+            PRE_MSE_summary[0] = np.mean(PRE_MSE)
             plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
-        cfg.prob_model = OmegaConf.to_container(cfg.prob_model, resolve=True)
-        prob_model = build_prob_model(task, cfg.prob_model)
-
-        save_dict = torch.load(os.path.join(run_save_path, "checkpoints", str(al_iter)+".pt"))
-
-        prob_model.init_training(0)
-
-        print("Model keys:", prob_model.model.state_dict().keys())
-        print("Prob model keys:", prob_model.state_dict().keys())
-        print("Task norm is ", prob_model.task_norm)
-        prob_model.load_state_dict(save_dict['model'])
+        prob_model, run_save_path = read_in_model(cfg, al_iter)
 
         pred_after_current_iter, temp = calculate_current_predictions(prob_model, idxs_to_plot)
         
@@ -287,11 +371,19 @@ def main(cfg: DictConfig):
 
 
         print("Calculating mean PRE v t")
-        PRE_av, PRE_av_sim = calculate_mean_PRE_v_t(prob_model)
+        PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
         plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
+        plot_mean_PRE_MSE_v_t(PRE_MSE, al_iter, save_path)
+
+        PRE_summary[0,al_iter] = np.mean(PRE_av)
+        PRE_summary[1,al_iter] = np.mean(PRE_av_sim)
+        PRE_MSE_summary[al_iter] = np.mean(PRE_MSE)
 
         PRE_before_dict = PRE_after_dict
         pred_after_last_iter = pred_after_current_iter
+
+    plot_PRE_al(PRE_summary, save_path)
+    plot_PRE_MSE_al(PRE_MSE_summary, save_path)
 
 if __name__ == "__main__":
     main()

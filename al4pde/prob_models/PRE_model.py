@@ -152,7 +152,7 @@ class PREModel(ProbModel):
         if self.training_type in ['autoregressive', 'teacher_forcing']:
         
             pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-            pred = self.model.task_norm.denorm_traj(pred)
+            #pred = self.model.task_norm.denorm_traj(pred)
             unc = torch.abs(self.residual(pred, pde_param))
 
             return pred, unc
