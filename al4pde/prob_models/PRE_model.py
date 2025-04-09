@@ -41,7 +41,7 @@ class PREModel(ProbModel):
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
 
 
-        if task == "burgers":
+        if self.task == "burgers":
             nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
             #print("Field shape before permuting ", uu.shape)
             #print("Shape of nu ", nu.shape)
@@ -65,7 +65,7 @@ class PREModel(ProbModel):
                 #print("Residual shape after permuting ", res.shape)
                 return res
 
-        if task == "2d_ns_rand":
+        if self.task == "2d_ns_rand":
             dy = torch.tensor(dx, dtype=torch.float32, device=device)
             print("INput shape ", uu.shape)
             
