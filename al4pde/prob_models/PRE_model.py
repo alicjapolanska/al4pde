@@ -12,7 +12,7 @@ from al4pde.evaluation.visualization import plot_worst_traj
 from al4pde.prob_models.prob_model import ProbModel
 from al4pde.models.build_wrapper import build_wrapper
 from al4pde.evaluation.stats import LossUncCorr, UncAvg
-from al4pde.prob_models.PREConvOps import ConvOps_1d
+from al4pde.prob_models.PREConvOps import ConvOps_1d, ConvOps_2d
 from al4pde.utils import save_checkpoint, load_checkpoint
 
 
@@ -28,7 +28,7 @@ class PREModel(ProbModel):
         self.stats.append(UncAvg("unc")) 
         self.stats.append(LossUncCorr("corr_unc_loss", self.loss))
     
-    def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dt: float = 0.05):
+    def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dy: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
             uu  - tensor containing solution value (bs, nx, nt, 1)
             pde_param - Burgers parameter nu (bs, 1)
@@ -39,28 +39,55 @@ class PREModel(ProbModel):
 
         dx = torch.tensor(dx, dtype=torch.float32, device=device)
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
-        nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
-        #print("Field shape before permuting ", uu.shape)
-        #print("Shape of nu ", nu.shape)
-        # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
-        uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
-        uu = uu.permute(0, 2, 1) #permute for correct PRE computation
-        #print("Field shape after permuting ", uu.shape)
 
-        #Defining the required Convolutional Operations. 
-        D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
-        D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
-        D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
 
-        res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
-        #print("Residual shape ", res.shape)
+        if task == "burgers":
+            nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
+            #print("Field shape before permuting ", uu.shape)
+            #print("Shape of nu ", nu.shape)
+            # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
+            uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
+            uu = uu.permute(0, 2, 1) #permute for correct PRE computation
+            #print("Field shape after permuting ", uu.shape)
 
-        if boundary:
-            return res.permute(0, 2, 1).unsqueeze(-1)
-        else: 
-            res = res[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
-            #print("Residual shape after permuting ", res.shape)
-            return res
+            #Defining the required Convolutional Operations. 
+            D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
+            D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
+            D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
+
+            res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
+            #print("Residual shape ", res.shape)
+
+            if boundary:
+                return res.permute(0, 2, 1).unsqueeze(-1)
+            else: 
+                res = res[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
+                #print("Residual shape after permuting ", res.shape)
+                return res
+
+        if task == "2d_ns_rand":
+            dy = torch.tensor(dx, dtype=torch.float32, device=device)
+            print("INput shape ", uu.shape)
+            
+            #Defining the required Convolutional Operations. 
+            D_t = ConvOps_2d.ConvOperator(domain='t', order=1)
+            D_x = ConvOps_2d.ConvOperator(domain='x', order=1)
+            D_y = ConvOps_2d.ConvOperator(domain='y', order=1)
+
+            rho = uu[:, 0]
+            u   = uu[:, 1]
+            v   = uu[:, 2]
+
+            print("u and v shape ", u.shape, v.shape)
+            
+            # mass_residual = self.D_t(rho) + rho*(self.D_x(u) + self.D_y(v)) + u*self.D_x(rho) + v*self.D_y(rho)
+            mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
+
+            if boundary: 
+                return mass_residual
+            else:
+                return mass_residual[...,1:-1,1:-1,1:-1]
+
         
     @property
     def val_loader(self):
