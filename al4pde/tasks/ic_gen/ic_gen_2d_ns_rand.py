@@ -371,8 +371,6 @@ class ICGenNSRand(ICGenerator):
             mask_fv = mask_fv.to(mask.device)
             mask[to_be_wind_IDXS, ...] = mask_fv[to_be_wind_IDXS, ...]
 
-        print("u shape is ", u.shape)
-
         # apply windowing on all fields based on the mask
         u[:, :, ...] = u[:, :, ...] * mask[:, None, :, :, None]
         u[:, 0, ...] = u[:, 0, ...] + d0[:, :, None, None] * (1.0 - mask[:, :, :, None])
@@ -380,10 +378,8 @@ class ICGenNSRand(ICGenerator):
         # u: [bs, 5, nx, ny, nz],   nz = 1 for 2D
         # for active learning requirement, remove z dimension and reformat to [bs, nx, ny, 5]
         u = u.squeeze(-1).permute(0, 2, 3, 1)  # [bs, nx, ny, 5])
-        print("u shape after squeezing is ", u.shape)
         # remove the extraneous Vz field since the ML model uses only 4 fields (DD, Vx, Vy, PP) for 2D
         u = u[:, :, :, (0, 1, 2, 4)].unsqueeze(-2)
-        print("u shape after unsqueezing is ", u.shape)
         if not torch.all(torch.isfinite(u)):
             for i in range(len(u)):
                 if not torch.all(torch.isfinite((u[i]))):
