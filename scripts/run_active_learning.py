@@ -46,8 +46,10 @@ def main(cfg: DictConfig):
 
     # init components
     set_current_seed(cfg.seed, 0, sampling_finished=True, task=None, use_test=use_test)
+    print("Set the seed")
     run_save_path = os.path.join(cfg.task.run_save_path, run_id)
     task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
+    print("Task was instantiated")
     acq_strat = build_strategy(task, cfg.acquisition)
     print("acq", acq_strat, flush=True)
     print("Prob model cfg", cfg.prob_model)
