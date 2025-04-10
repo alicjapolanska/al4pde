@@ -45,6 +45,7 @@ class Task:
         self.img_save_path = os.path.join(run_save_path, "img")
         os.makedirs(self.img_save_path, exist_ok=True)
         self.train_data_folders = [self.traj_save_path]
+        print("Done with init.")
 
     def get_grid(self, n=1):
         return self.ic_gen.get_grid(n)
