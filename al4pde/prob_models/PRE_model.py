@@ -27,6 +27,7 @@ class PREModel(ProbModel):
         self.model = model_cfg
         self.stats.append(UncAvg("unc")) 
         self.stats.append(LossUncCorr("corr_unc_loss", self.loss))
+        print("Task is ", self.task)
     
     def residual(self, uu, pde_param: float, boundary: bool = False, dx: float = 0.001, dy: float = 0.001, dt: float = 0.05):
         """Compute PRE residual for a rolled out solution u. Hardcoded to Burgers (for now).
