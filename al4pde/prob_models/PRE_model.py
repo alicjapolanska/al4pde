@@ -69,15 +69,18 @@ class PREModel(ProbModel):
         if self.task.pde_name == "CFD_2D_Rand_S":
             dy = torch.tensor(dx, dtype=torch.float32, device=device)
             print("Input shape ", uu.shape)
+            # Permute from [bs, nx, ny, nt, 4] to [bs, nt, nx, ny, 4]
+            uu = uu.permute(0, 3, 1, 2, 4)
+            print("uu shape after permuting", uu.shape)
             
             #Defining the required Convolutional Operations. 
             D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
             D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device)
             D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device)
 
-            rho = uu[:, 0]
-            u   = uu[:, 1]
-            v   = uu[:, 2]
+            rho = uu[..., 0]
+            u   = uu[..., 1]
+            v   = uu[..., 2]
 
             print("u and v shape ", u.shape, v.shape)
             
@@ -85,9 +88,9 @@ class PREModel(ProbModel):
             mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
 
             if boundary: 
-                return mass_residual
+                return mass_residual.permute(0, 2, 3, 1, 4)
             else:
-                return mass_residual[...,1:-1,1:-1,1:-1]
+                return mass_residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1, 4)
 
         
     @property
