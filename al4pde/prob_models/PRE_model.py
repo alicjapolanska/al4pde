@@ -42,7 +42,7 @@ class PREModel(ProbModel):
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
 
 
-        if self.task == "burgers":
+        if self.task.pde_name == "Burgers":
             nu = torch.tensor(pde_param, dtype=torch.float32, device=device).unsqueeze(-1)
             #print("Field shape before permuting ", uu.shape)
             #print("Shape of nu ", nu.shape)
@@ -66,9 +66,9 @@ class PREModel(ProbModel):
                 #print("Residual shape after permuting ", res.shape)
                 return res
 
-        if self.task == "2d_ns_rand":
+        if self.task.pde_name == "CFD_2D_Rand_S":
             dy = torch.tensor(dx, dtype=torch.float32, device=device)
-            print("INput shape ", uu.shape)
+            print("Input shape ", uu.shape)
             
             #Defining the required Convolutional Operations. 
             D_t = ConvOps_2d.ConvOperator(domain='t', order=1)
