@@ -26,8 +26,10 @@ class UncertaintyBased(PoolBased):
 
     def __init__(self, task, data_schedule, batch_size, pool_size, unc_eval_mode,
                  unc_num_rollout_steps_rel, selection_mode, power_beta=1, pred_batch_size=128):
+        print("Instantiating UncertaintyBased")
         super().__init__(task, data_schedule, batch_size, pool_size, unc_eval_mode, unc_num_rollout_steps_rel,
                          pred_batch_size=pred_batch_size)
+        print("Init done")
         self.selection_mode = selection_mode
         assert selection_mode in ["random", "top_k", "power"]
         self.power_beta = power_beta
