@@ -14,6 +14,7 @@ class Task:
                  reduced_resolution, reduced_resolution_t, skip_initial_steps=0,
                  data_gen=None, use_test=False):
 
+        print("Instantiating task")
         self.ic_gen = ic_gen
         self.param_gen = param_gen
         self.sim = sim
