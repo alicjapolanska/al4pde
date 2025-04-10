@@ -71,9 +71,9 @@ class PREModel(ProbModel):
             print("Input shape ", uu.shape)
             
             #Defining the required Convolutional Operations. 
-            D_t = ConvOps_2d.ConvOperator(domain='t', order=1)
-            D_x = ConvOps_2d.ConvOperator(domain='x', order=1)
-            D_y = ConvOps_2d.ConvOperator(domain='y', order=1)
+            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
+            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device)
+            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device)
 
             rho = uu[:, 0]
             u   = uu[:, 1]
