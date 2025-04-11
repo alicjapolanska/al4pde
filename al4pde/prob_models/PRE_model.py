@@ -88,10 +88,14 @@ class PREModel(ProbModel):
             mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
             print("Res shape ", mass_residual.shape)
 
+
             if boundary: 
-                return mass_residual.permute(0, 2, 3, 1, 4)
+                return mass_residual.permute(0, 2, 3, 1)
             else:
-                return mass_residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1, 4)
+                #Lose channels dimension here
+                mass_residual = mass_residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
+                print("Res shape after permuting", mass_residual.shape)
+                return mass_residual
 
         
     @property
