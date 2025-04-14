@@ -72,7 +72,7 @@ def calculate_current_predictions(prob_model, idxs_to_plot):
             for i in range(batch_size):
                 if current_idx in chosen_indices:
                     sample_traj = yy[i, :, :, :].unsqueeze(0)  # Keep batch dimension
-                    pde_param = param[i, :].item()
+                    pde_param = param[i, :]
 
                     ground_truths[current_idx] = [sample_traj, pde_param]
 
