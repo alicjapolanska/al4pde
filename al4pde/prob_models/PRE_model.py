@@ -77,7 +77,6 @@ class PREModel(ProbModel):
             D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
             D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device)
             D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device)
-            D_x_y = ConvOps_2d.ConvOperator(domain='x, y', order=2, device=device)
             D_xx_yy = ConvOps_2d.ConvOperator(domain='x, y', order=2, device=device)
 
             rho = uu[..., 0]
