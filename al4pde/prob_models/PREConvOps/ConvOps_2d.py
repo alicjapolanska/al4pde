@@ -95,34 +95,30 @@ class ConvOperator():
     """
     def __init__(self, domain=None, order=None, scale=1.0, taylor_order=2, conv='direct', device='cpu', requires_grad=False):
 
-        try: 
-            self.domain = domain #Axis across with the derivative is taken. 
-            self.dims = len(self.domain) #Domain size
-            self.order = order #order of derivation
-            self.stencil = get_stencil(self.dims, self.order, taylor_order)
+        self.domain = domain #Axis across with the derivative is taken. 
+        self.dims = len(self.domain) #Domain size
+        self.order = order #order of derivation
+        self.stencil = get_stencil(self.dims, self.order, taylor_order)
 
-            if self.domain == 't':
-                self.axis = 2
-            elif self.domain == 'x':
-                self.axis = 0
-            elif self.domain == 'y':
-                self.axis = 1
-            elif self.domain == ('x','y'):
-                self.axis = 0
-            elif self.domain == ('x', 'y', 't'):
-                self.axis = 0
-            else:
-                raise ValueError("Invalid Domain. Must be either x,y or t")
-            
-            self.kernel = kernel_3d(self.stencil, self.axis)
-            self.kernel = scale*self.kernel
-            self.kernel = self.kernel.to(device)
+        if self.domain == 't':
+            self.axis = 2
+        elif self.domain == 'x':
+            self.axis = 0
+        elif self.domain == 'y':
+            self.axis = 1
+        elif self.domain == ('x','y'):
+            self.axis = 0
+        elif self.domain == ('x', 'y', 't'):
+            self.axis = 0
+        else:
+            raise ValueError("Invalid Domain. Must be either x,y or t")
+        
+        self.kernel = kernel_3d(self.stencil, self.axis)
+        self.kernel = scale*self.kernel
+        self.kernel = self.kernel.to(device)
 
-            if requires_grad==True:
-                self.kernel.requires_grad_ = True 
-
-        except:
-            pass
+        if requires_grad==True:
+            self.kernel.requires_grad_ = True 
 
 
         if conv == 'direct': 
