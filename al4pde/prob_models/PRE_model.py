@@ -77,16 +77,32 @@ class PREModel(ProbModel):
             D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
             D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device)
             D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device)
+            D_x_y = ConvOps_2d.ConvOperator(domain='x, y', order=2, device=device)
+            D_xx_yy = ConvOps_2d.ConvOperator(domain='x, y', order=2, device=device)
 
             rho = uu[..., 0]
             u   = uu[..., 1]
             v   = uu[..., 2]
+            p   = uu[..., 3]
 
-            print("u and v shape ", u.shape, v.shape)
+            print("uu shape ", uu.shape, " u shape ", u.shape)
+
+            print("Param shape ", pde_param.shape)
+
+            eta = pde_param[:,0]
+            zeta = pde_param[:,1]
             
             # mass_residual = self.D_t(rho) + rho*(self.D_x(u) + self.D_y(v)) + u*self.D_x(rho) + v*self.D_y(rho)
             mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
-            print("Res shape ", mass_residual.shape)
+            print("Mass res shape ", mass_residual.shape)
+
+                    #scaling the residuals
+            mom_res_x = rho*self.D_t(u)*2*self.dx**2 + u*self.D_x(u)*2*self.dt*self.dx + v*self.D_y(u)*2*self.dt*self.dx + self.D_x(p)*2*self.dt*self.dx - eta*self.D_xx_yy(u)*4*self.dt - (zeta+eta/3)*(self.D_x(self.D_x(u) + self.D_y(v)))*2*self.dt
+            mom_res_y = rho*self.D_t(v)*2*self.dx**2 + u*self.D_x(v)*2*self.dt*self.dx + v*self.D_y(v)*2*self.dt*self.dx + self.D_y(p)*2*self.dt*self.dx - eta*self.D_xx_yy(v)*4*self.dt - (zeta+eta/3)*(self.D_y(self.D_x(u) + self.D_y(v)))*2*self.dt
+
+            mom_residuals = mom_res_x + mom_res_y
+
+            print("Momentum res shape ", mom_residuals.shape)
 
 
             if boundary: 
@@ -96,7 +112,7 @@ class PREModel(ProbModel):
                 mass_residual = mass_residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
                 print("Res shape after permuting", mass_residual.shape)
                 return mass_residual
-
+            
         
     @property
     def val_loader(self):
