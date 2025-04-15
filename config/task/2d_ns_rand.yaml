@@ -57,6 +57,6 @@ sim:
 
 
 data_gen:
-  num_initial_batches: 8
-  num_test_batches: 256
-  batch_size: 16
+  num_initial_batches: 3 #8
+  num_test_batches: 5 #256
+  batch_size: 5 #16
