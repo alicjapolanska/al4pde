@@ -97,8 +97,8 @@ class PREModel(ProbModel):
             print("Mass res shape ", mass_residual.shape)
 
                     #scaling the residuals
-            mom_res_x = rho*self.D_t(u)*2*self.dx**2 + u*self.D_x(u)*2*self.dt*self.dx + v*self.D_y(u)*2*self.dt*self.dx + self.D_x(p)*2*self.dt*self.dx - eta*self.D_xx_yy(u)*4*self.dt - (zeta+eta/3)*(self.D_x(self.D_x(u) + self.D_y(v)))*2*self.dt
-            mom_res_y = rho*self.D_t(v)*2*self.dx**2 + u*self.D_x(v)*2*self.dt*self.dx + v*self.D_y(v)*2*self.dt*self.dx + self.D_y(p)*2*self.dt*self.dx - eta*self.D_xx_yy(v)*4*self.dt - (zeta+eta/3)*(self.D_y(self.D_x(u) + self.D_y(v)))*2*self.dt
+            mom_res_x = rho*D_t(u)*2*self.dx**2 + u*D_x(u)*2*self.dt*self.dx + v*D_y(u)*2*self.dt*self.dx + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(self.D_x(u) + D_y(v)))*2*dt
+            mom_res_y = rho*D_t(v)*2*self.dx**2 + u*D_x(v)*2*self.dt*self.dx + v*D_y(v)*2*self.dt*self.dx + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(self.D_x(u) + D_y(v)))*2*dt
 
             mom_residuals = mom_res_x + mom_res_y
 
