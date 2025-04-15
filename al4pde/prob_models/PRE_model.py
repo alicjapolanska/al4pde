@@ -103,14 +103,15 @@ class PREModel(ProbModel):
 
             print("Momentum res shape ", mom_residuals.shape)
 
+            residual = mass_residual + mom_residuals
 
             if boundary: 
-                return mass_residual.permute(0, 2, 3, 1)
+                return residual.permute(0, 2, 3, 1)
             else:
                 #Lose channels dimension here
-                mass_residual = mass_residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
-                print("Res shape after permuting", mass_residual.shape)
-                return mass_residual
+                residual = residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
+                print("Res shape after permuting", residual.shape)
+                return residual
             
         
     @property
