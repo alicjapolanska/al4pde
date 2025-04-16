@@ -68,10 +68,8 @@ class PREModel(ProbModel):
 
         if self.task.pde_name == "CFD_2D_Rand_S":
             dy = torch.tensor(dx, dtype=torch.float32, device=device)
-            print("Input shape ", uu.shape)
             # Permute from [bs, nx, ny, nt, 4] to [bs, nt, nx, ny, 4]
             uu = uu.permute(0, 3, 1, 2, 4)
-            print("uu shape after permuting", uu.shape)
             
             #Defining the required Convolutional Operations. 
             D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
@@ -84,37 +82,17 @@ class PREModel(ProbModel):
             v   = uu[..., 2]
             p   = uu[..., 3]
 
-            print("uu shape ", uu.shape, " u shape ", u.shape)
-
-            print("Param shape ", pde_param.shape)
-
-            eta = pde_param[:,0]
-            zeta = pde_param[:,1]
+            eta = pde_param[:,0].view(-1, 1, 1, 1)
+            zeta = pde_param[:,1].view(-1, 1, 1, 1)
             
             # mass_residual = self.D_t(rho) + rho*(self.D_x(u) + self.D_y(v)) + u*self.D_x(rho) + v*self.D_y(rho)
             mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
-            print("Mass res shape ", mass_residual.shape)
-
-            #scaling the residuals
-            t1 = rho*D_t(u)*2*dx**2
-            print("shape 1 ", t1.shape)
-            t2 = u*D_x(u)*2*dt*dx
-            print("shape 2", t2.shape)
-            t3 = v*D_y(u)*2*dt*dx
-            print("shape 3", t3.shape)
-            t4 = D_x(p)*2*dt*dx
-            print("shape 4", t4.shape)
-            t5 = eta*D_xx_yy(u)*4*dt
-            print("shape 5", t5.shape)
-            t6 = (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*2*dt
-            print("shape 6", t6.shape)
 
             mom_res_x = rho*D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*2*dt
             mom_res_y = rho*D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*2*dt
 
             mom_residuals = mom_res_x + mom_res_y
 
-            print("Momentum res shape ", mom_residuals.shape)
 
             residual = mass_residual + mom_residuals
 
@@ -123,7 +101,6 @@ class PREModel(ProbModel):
             else:
                 #Lose channels dimension here
                 residual = residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
-                print("Res shape after permuting", residual.shape)
                 return residual
             
         
