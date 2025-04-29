@@ -37,18 +37,24 @@ class UncertaintyBased(PoolBased):
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
                     train_loader=None) -> torch.Tensor:
+
+        save_path = os.path.join(task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
+
         dataset = TensorDataset(ic_pool, pde_param_pool)
         unc = []
-        if self.selection_mode != "random":
-            loader = DataLoader(dataset, batch_size=self.pred_batch_size)
-            grid = grid.to(device)
-            for i, batch in enumerate(loader):
-                ic = batch[0].to(device)
-                pde_param = batch[1].to(device)
-                grid_batch = grid.expand([len(ic), ] + list(grid.shape))
-                unc_batch = self.model_uncertainty(prob_model, ic, grid_batch, pde_param).detach().cpu()
-                unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
-            unc = torch.concat(unc, dim=0)
+        #if self.selection_mode != "random":
+        loader = DataLoader(dataset, batch_size=self.pred_batch_size)
+        grid = grid.to(device)
+        for i, batch in enumerate(loader):
+            ic = batch[0].to(device)
+            pde_param = batch[1].to(device)
+            grid_batch = grid.expand([len(ic), ] + list(grid.shape))
+            unc_batch = self.model_uncertainty(prob_model, ic, grid_batch, pde_param).detach().cpu()
+            unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
+        unc = torch.concat(unc, dim=0)
+
+        torch.save(unc, save_path)
+
         n_samples = self.num_batches(al_iter) * self.batch_size
         if self.selection_mode == "top_k":
             sel_idx = top_k(unc, n_samples)
