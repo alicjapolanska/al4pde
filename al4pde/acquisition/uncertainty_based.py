@@ -4,6 +4,7 @@ from torch.utils.data import TensorDataset, DataLoader
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from al4pde.acquisition.pool_based import PoolBased
 from al4pde.prob_models.prob_model import ProbModel
+import os
 
 
 def top_k(unc: torch.Tensor, k: int) -> torch.Tensor:
@@ -38,7 +39,7 @@ class UncertaintyBased(PoolBased):
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
                     train_loader=None) -> torch.Tensor:
 
-        save_path = os.path.join(task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
+        save_path = os.path.join(self.task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
 
         dataset = TensorDataset(ic_pool, pde_param_pool)
         unc = []
