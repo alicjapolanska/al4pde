@@ -98,7 +98,6 @@ class ConvOperator():
         self.domain = domain #Axis across with the derivative is taken. 
         self.dims = len(self.domain) #Domain size
         self.order = order #order of derivation
-        print("Dims is ", self.dims)
 
         self.stencil = get_stencil(self.dims, self.order, taylor_order)
 
