@@ -107,16 +107,22 @@ def calculate_mean_PRE_v_t(prob_model):
             param = param.to(device)
             t_idx = t_idx.to(device)
             yy = yy.to(device)
+            print("yy shape", yy.shape)
+            if len(yy.shape) == 4:
+                #1D
+                dim_to_av = (0,1)
+            if len(yy.shape) == 5:
+                #2D
+                dim_to_av = (0,1,2)
 
-            pred = prob_model.roll_out(xx, grid, yy.shape[2], param, t_idx)
+            pred = prob_model.roll_out(xx, grid, yy.shape[-2], param, t_idx)
             unc = prob_model.residual(pred, param).squeeze() #squeeze out channel dim of size 1
-            unc_av = torch.mean(unc, dim=(0,1)) #mean over batch and x
-
+            unc_av = torch.mean(unc, dim=dim_to_av) #mean over batch and space
             unc_sim = prob_model.residual(yy, param).squeeze() #squeeze out channel dim of size 1
-            unc_av_sim = torch.mean(unc_sim, dim=(0,1)) #mean over batch and x
-
+            unc_av_sim = torch.mean(unc_sim, dim=dim_to_av) #mean over batch and space
+            print("Sizes ", unc.shape, unc_sim.shape)
             err = (unc-unc_sim)**2 
-            err_av = torch.mean(err, dim=(0,1)) #mean over batch and x
+            err_av = torch.mean(err, dim=dim_to_av) #mean over batch and space
 
             if not created_summary_arr:
                 unc_av_all = torch.zeros_like(unc_av)
@@ -201,8 +207,12 @@ def plot_PRE_comp(PRE_traj, PRE_before, PRE_after, al_iter, data_idx, save_path)
         Assumes PRE has shape (Nx, Nt)."""
     
 
-    # Define x and t axes
-    Nx, Nt = PRE_before.shape
+    dims = len(PRE_before.shape) - 1
+    # Define axes
+    if dims == 1:
+        Nx, Nt = PRE_before.shape
+    if dims == 2:
+        Nx, Ny, Nt = PRE_before.shape
     x_vals = np.arange(Nx)  # Spatial dimension
     t_vals = np.arange(Nt)  # Time dimension
     
@@ -252,6 +262,12 @@ def plot_PRE_slice(PRE_traj, PRE_before, PRE_after, times_to_plot, al_iter, data
         Assumes PRE has shape (Nx, Nt)."""
     
     x_vals = np.arange(PRE_traj.shape[0])  # Spatial dimension
+
+    if len(PRE_traj.shape) == 3:
+        Ny = PRE_traj.shape[1]
+        PRE_traj = PRE_traj[:,int(Ny/2),:] # Take middle slice for y
+        PRE_before = PRE_before[:,int(Ny/2),:]
+        PRE_after = PRE_after[:,int(Ny/2),:]
 
     for time in times_to_plot:
 
@@ -345,15 +361,18 @@ def main(cfg: DictConfig):
             PRE_traj_dict = {}
             PRE_before_dict = {}
             for data_idx in ground_truth_pred:
+                #print("uu input ", *pred_after_last_iter[data_idx][0].shape, pred_after_last_iter[data_idx][0].device)
+                #print("pde param input ", *pred_after_last_iter[data_idx][1], pred_after_last_iter[data_idx][1].device)
                 PRE_traj_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
                 PRE_before_dict[data_idx] = prob_model.residual(*pred_after_last_iter[data_idx]).squeeze()
             
             save_path = os.path.join(run_save_path, "img")
             print("Calculating mean PRE v t")
             PRE_av, PRE_av_sim, PRE_MSE = calculate_mean_PRE_v_t(prob_model)
-            PRE_summary[0,0] = np.mean(PRE_av)
-            PRE_summary[1,0] = np.mean(PRE_av_sim)
-            PRE_MSE_summary[0] = np.mean(PRE_MSE)
+
+            PRE_summary[0,0] = np.mean(PRE_av.clone().cpu().numpy())
+            PRE_summary[1,0] = np.mean(PRE_av_sim.clone().cpu().numpy())
+            PRE_MSE_summary[0] = np.mean(PRE_MSE.clone().cpu().numpy())
             plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter-1, save_path)
 
         prob_model, run_save_path = read_in_model(cfg, al_iter)
@@ -366,7 +385,7 @@ def main(cfg: DictConfig):
 
         for data_idx in ground_truth_pred:
             save_path = os.path.join(run_save_path, "img")
-            plot_PRE_comp(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], al_iter, data_idx, save_path)
+            #plot_PRE_comp(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], al_iter, data_idx, save_path)
             plot_PRE_slice(PRE_traj_dict[data_idx], PRE_before_dict[data_idx], PRE_after_dict[data_idx], times_to_plot, al_iter, data_idx, save_path)
 
 
@@ -375,9 +394,9 @@ def main(cfg: DictConfig):
         plot_mean_PRE_v_t(PRE_av, PRE_av_sim, al_iter, save_path)
         plot_mean_PRE_MSE_v_t(PRE_MSE, al_iter, save_path)
 
-        PRE_summary[0,al_iter] = np.mean(PRE_av)
-        PRE_summary[1,al_iter] = np.mean(PRE_av_sim)
-        PRE_MSE_summary[al_iter] = np.mean(PRE_MSE)
+        PRE_summary[0,al_iter] = np.mean(PRE_av.clone().cpu().numpy())
+        PRE_summary[1,al_iter] = np.mean(PRE_av_sim.clone().cpu().numpy())
+        PRE_MSE_summary[al_iter] = np.mean(PRE_MSE.clone().cpu().numpy())
 
         PRE_before_dict = PRE_after_dict
         pred_after_last_iter = pred_after_current_iter
