@@ -82,6 +82,10 @@ class PREModel(ProbModel):
             v   = uu[..., 2]
             p   = uu[..., 3]
 
+            #Handle batch size 1
+
+            pde_param = torch.atleast_2d(pde_param)
+
             eta = pde_param[:,0].view(-1, 1, 1, 1)
             zeta = pde_param[:,1].view(-1, 1, 1, 1)
             
