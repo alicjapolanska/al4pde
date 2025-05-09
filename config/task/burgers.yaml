@@ -11,8 +11,8 @@ ic_gen:
 
 param_gen:
   _target_: al4pde.tasks.param_gen.PDEParamGenerator
-  min_val: 0.1
-  max_val: 0.101
+  min_val: 0.001
+  max_val: 1
   log_scale: true
 
 sim:
