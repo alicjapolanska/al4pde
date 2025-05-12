@@ -11,8 +11,8 @@ ic_gen:
 
 param_gen:
   _target_: al4pde.tasks.param_gen.PDEParamGenerator
-  min_val: 0.001
-  max_val: 1
+  min_val: 0.5
+  max_val: 0.501
   log_scale: true
 
 sim:
@@ -27,6 +27,6 @@ sim:
 
 
 data_gen:
-  num_test_batches: 64
+  num_test_batches: 256
   num_initial_batches: 20
-  batch_size: 32
+  batch_size: 16
