@@ -93,11 +93,12 @@ class BatchSelection:
 
             u_trajectories, u_xcoords, u_tcoords = self.task.evolve_ic(ic_batch, pde_param_batch)
 
-            unc_batch = prob_model.residual(u_trajectories, pde_param_batch).cpu()
-            print(f"unc_batch shape: {unc_batch.shape}")
-            unc_batch_mean = unc_batch.reshape((len(unc_batch), -1)).mean(1)
-            print(f"unc_batch_mean shape: {unc_batch_mean.shape}")
-            unc.append(unc_batch_mean)
+            if isinstance(prob_model, al4pde.prob_models.PRE_model.PREModel):
+                unc_batch = prob_model.residual(u_trajectories, pde_param_batch).cpu()
+                print(f"unc_batch shape: {unc_batch.shape}")
+                unc_batch_mean = unc_batch.reshape((len(unc_batch), -1)).mean(1)
+                print(f"unc_batch_mean shape: {unc_batch_mean.shape}")
+                unc.append(unc_batch_mean)
 
             print(f"obtained trajectories shape: {u_trajectories.shape}")
             # save generated trajectories
@@ -107,9 +108,10 @@ class BatchSelection:
         wandb.log({"al/al_iter": al_iter, "al/sim_time": time.time() - t})
         print("simulation  time", time.time() - t)
 
-        save_path = os.path.join(self.task.traj_save_path, "unc_chosen" + str(al_iter) + ".pt")
-        unc = torch.concat(unc, dim=0)
-        torch.save(unc, save_path)
+        if isinstance(prob_model, al4pde.prob_models.PRE_model.PREModel):
+            save_path = os.path.join(self.task.traj_save_path, "unc_chosen" + str(al_iter) + ".pt")
+            unc = torch.concat(unc, dim=0)
+            torch.save(unc, save_path)
 
         prob_model.to(device)
 
