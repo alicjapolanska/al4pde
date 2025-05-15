@@ -15,10 +15,25 @@ class ICGenJOREK(ICGenerator):
 
     def get_grid(self, n):
         path_0 = get_jorek_file_path(self.data_path, 0)
-        fields, x, y = JOREK_electrostatic_single(path_0)
+        fields, gridx, gridy = JOREK_electrostatic_single(path_0)
+
+        print("x shape ", gridx.shape, "y shape", gridy.shape)
+
+        grid = torch.stack([gridx, gridy], dim=-1)
+        print("Grid shape ", grid.shape)
+
+        # Add batch 
+        grid = grid.expand([n, ] + list(grid.shape)) 
+        print("Grid shape ", grid.shape)
+
+        return grid.expand([n, ] + list(grid.shape))     # [bs, nx, ny, nc]
+
+
         
 
-    def generate_initial_conditions(self, ic_params: TensorDict, pde_params: torch.Tensor) -> torch.Tensor:
+    def generate_initial_conditions(self, ix: int, pde_params = None) -> torch.Tensor:
+        
+        
         
         
         
