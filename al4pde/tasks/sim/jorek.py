@@ -113,6 +113,53 @@ def JOREK_electrostatic(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torc
 
     return fields, x, y
 
+def JOREK_electrostatic_list(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Load in JOREK electrostatic data from subfolders of data_loc.
+        
+        Args:
+            data_loc (str) - path to where JOREK data is saved
+        
+        Returns:
+             Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: Torch tensors
+                containing fields of dimensions BS, Nx, Ny, Nt, Nc with channels rho, phi, T,
+                x grid, y grid and timestep. Runs from each file are stacked in batch dimension."""
+
+    folders = [name for name in os.listdir(data_loc) if os.path.isdir(os.path.join(data_loc, name))]
+    found_files = False 
+    for ii in range(len(folders)):
+        rho_array, phi_array, T_array = [], [], []
+        files = glob.glob(data_loc + folders[ii] + '/*.h5')
+        for jj in tqdm.tqdm(range(len(files))):
+            with h5py.File(files[jj], 'r') as f:
+                found_files = True
+                #keys = list(f.keys())
+                rho = f['rho']
+                phi = f['Phi']
+                T = f['T']
+                Rgrid = f['R_mesh(nR,nZ)']
+                Zgrid = f['Z_mesh(nR,nZ)']
+
+                rho_array.append(np.asarray(rho, dtype=np.float32))
+                phi_array.append(np.asarray(phi, dtype=np.float32))
+                T_array.append(np.asarray(T, dtype=np.float32))
+                x = np.asarray(Rgrid, dtype=np.float32)
+                y = np.asarray(Zgrid, dtype=np.float32)
+
+    if not found_files:
+        raise ValueError("No files found in subfolders of ", data_loc)
+    
+    rho = np.asarray(rho_array)
+    phi = np.asarray(phi_array)
+    T = np.asarray(T_array)
+
+    print("Concatenating...")
+    fields = stacked_fields([rho, phi, T])
+
+    x, y = torch.tensor(x), torch.tensor(y)
+
+
+    return fields, x, y
+
 def JOREK_electrostatic_single(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Load in JOREK electrostatic data from file specified with path in data_loc.
         

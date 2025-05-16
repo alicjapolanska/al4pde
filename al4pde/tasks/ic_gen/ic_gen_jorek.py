@@ -31,9 +31,11 @@ class ICGenJOREK(ICGenerator):
 
         
 
-    def generate_initial_conditions(self, ix: int, pde_params = None) -> torch.Tensor:
+    def generate_initial_conditions(self, ixs: list[int], pde_params = None) -> torch.Tensor:
         
-        
+        for ix in ixs:
+
+            
         
         
         
