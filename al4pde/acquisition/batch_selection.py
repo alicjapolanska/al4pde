@@ -8,6 +8,7 @@ from al4pde.acquisition.data_schedule import DataSchedule
 from al4pde.evaluation.analysis import batch_errors
 from al4pde.prob_models.prob_model import ProbModel
 import os
+import al4pde
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
