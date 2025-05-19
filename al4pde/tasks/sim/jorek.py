@@ -113,40 +113,37 @@ def JOREK_electrostatic(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torc
 
     return fields, x, y
 
-def JOREK_electrostatic_list(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+def JOREK_electrostatic_list(data_loc: str, ixs: list[int]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Load in JOREK electrostatic data from subfolders of data_loc.
         
         Args:
             data_loc (str) - path to where JOREK data is saved
+            ixs (list[int]) - run indices to be extracted
         
         Returns:
              Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: Torch tensors
                 containing fields of dimensions BS, Nx, Ny, Nt, Nc with channels rho, phi, T,
                 x grid, y grid and timestep. Runs from each file are stacked in batch dimension."""
 
-    folders = [name for name in os.listdir(data_loc) if os.path.isdir(os.path.join(data_loc, name))]
-    found_files = False 
-    for ii in range(len(folders)):
         rho_array, phi_array, T_array = [], [], []
-        files = glob.glob(data_loc + folders[ii] + '/*.h5')
-        for jj in tqdm.tqdm(range(len(files))):
-            with h5py.File(files[jj], 'r') as f:
-                found_files = True
-                #keys = list(f.keys())
-                rho = f['rho']
-                phi = f['Phi']
-                T = f['T']
-                Rgrid = f['R_mesh(nR,nZ)']
-                Zgrid = f['Z_mesh(nR,nZ)']
+    files = glob.glob(data_loc + folders[ii] + '/*.h5')
 
-                rho_array.append(np.asarray(rho, dtype=np.float32))
-                phi_array.append(np.asarray(phi, dtype=np.float32))
-                T_array.append(np.asarray(T, dtype=np.float32))
-                x = np.asarray(Rgrid, dtype=np.float32)
-                y = np.asarray(Zgrid, dtype=np.float32)
+    for run_number in tqdm.tqdm(ixs, desc="Loading JOREK runs"):
+        file_path = get_jorek_file_path(data_loc, run_number)
 
-    if not found_files:
-        raise ValueError("No files found in subfolders of ", data_loc)
+        with h5py.File(files[jj], 'r') as f:
+            #keys = list(f.keys())
+            rho = f['rho']
+            phi = f['Phi']
+            T = f['T']
+            Rgrid = f['R_mesh(nR,nZ)']
+            Zgrid = f['Z_mesh(nR,nZ)']
+
+            rho_array.append(np.asarray(rho, dtype=np.float32))
+            phi_array.append(np.asarray(phi, dtype=np.float32))
+            T_array.append(np.asarray(T, dtype=np.float32))
+            x = np.asarray(Rgrid, dtype=np.float32)
+            y = np.asarray(Zgrid, dtype=np.float32)
     
     rho = np.asarray(rho_array)
     phi = np.asarray(phi_array)
@@ -201,8 +198,22 @@ class JOREKSim(Simulator):
         channel_names=["rho", "phi", "T"]
         super().__init__(pde_name="jorek", num_pde_params=1, spatial_dim=2, num_channels=3, dt=dt, ini_time=ini_time, fin_time=fin_time, channel_names=channel_names)
         self.data_path = data_path
+        self.max_step = 200
 
 
-    def n_step_sim(self, ic, pde_params, grid, init_time, n_steps):
-        raise NotImplementedError
+    def n_step_sim(self, ic: , pde_params, grid, init_time, n_steps):
+        """Load in JOREK run parametrised by ic
+
+            Args:
+                ic (int) - """
+        if n_steps > self.max_step:
+            raise ValueError("Number of steps must be less than " + str(self.max_step))
+        
+        t_coord = jnp.array(self.get_t_coord(init_time, n_steps))
+        uu_tc = torch.from_numpy(np.array(t_coord))
+
+        uu_traj = 
+
+        return uu_traj, grid, uu_tc
+
 
