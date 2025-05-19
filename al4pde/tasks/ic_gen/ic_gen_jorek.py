@@ -1,7 +1,7 @@
 import torch
 from tensordict import TensorDict
 from al4pde.tasks.ic_gen.ic_gen import ICGenerator
-from al4pde.tasks.sim.jorek import JOREK_electrostatic_single, get_jorek_file_path
+import al4pde.tasks.sim.jorek as jorek
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -14,8 +14,8 @@ class ICGenJOREK(ICGenerator):
         self.grid = self.get_grid()
 
     def get_grid(self, n):
-        path_0 = get_jorek_file_path(self.data_path, 0)
-        fields, gridx, gridy = JOREK_electrostatic_single(path_0)
+        path_0 = jorek.get_jorek_file_path(self.data_path, 0)
+        fields, gridx, gridy = jorek.JOREK_electrostatic_single(path_0)
 
         print("x shape ", gridx.shape, "y shape", gridy.shape)
 
@@ -32,12 +32,23 @@ class ICGenJOREK(ICGenerator):
         
 
     def generate_initial_conditions(self, ixs: list[int], pde_params = None) -> torch.Tensor:
-        
-        for ix in ixs:
-
+        """Load in JOREK initial conditions parametrised by the run index, contained in ixs.
             
+            Args:
+                ixs (list[int]) - Run indices to be extracted
+
+                pde_params - Only included for compatibility with hydra. Defaults to None 
+                    as params are the same with all runs. Not used here.
+            
+            Returns:
+
+             torch.Tensor Tensor containing fields of dimensions BS, Nx, Ny, Nt, Nc with channels rho, phi, T,
+        """
+        # Load in JOREK simulations from ixs
+        fields, x, y = jorek.JOREK_electrostatic_list(self.data_path, ixs)
+
+        # Extract first timestep
+        u = fields[..., 0, :]
         
-        
-        
-        return u   # [bs, nx, nt, nc]
+        return u   # [bs, nx, ny, 1, nc]
 
