@@ -35,8 +35,8 @@ param_gen:
   _target_: al4pde.tasks.param_gen.PDEParamGenerator
   # eta:  ...  # PDE param: (min, max) = (0.01, 0.1)
   # zeta: ...  # PDE param: (min, max) = (0.01, 0.1)
-  min_val: [1e-4, 1e-4]  # |eta|, |zeta|
-  max_val: [0.1, 0.1]    # |eta|, |zeta|
+  min_val: [0.05, 0.01]  # |eta|, |zeta|
+  max_val: [0.0501, 0.0101]    # |eta|, |zeta|
   log_scale: [true, true]
 
 sim:
