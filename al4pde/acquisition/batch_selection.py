@@ -7,6 +7,8 @@ from al4pde.tasks.task import Task
 from al4pde.acquisition.data_schedule import DataSchedule
 from al4pde.evaluation.analysis import batch_errors
 from al4pde.prob_models.prob_model import ProbModel
+import os
+import al4pde
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -82,6 +84,8 @@ class BatchSelection:
         with torch.no_grad():
             torch.cuda.empty_cache()
         t = time.time()
+
+        unc = []
         for i in range(int(np.ceil(float(len(ics)) / self.batch_size))):
             ic_batch = ics[i * self.batch_size: (i + 1) * self.batch_size]
             ic_params_batch = ic_params[i * self.batch_size: (i + 1) * self.batch_size]
@@ -90,6 +94,13 @@ class BatchSelection:
 
             u_trajectories, u_xcoords, u_tcoords = self.task.evolve_ic(ic_batch, pde_param_batch)
 
+            if isinstance(prob_model, al4pde.prob_models.PRE_model.PREModel):
+                unc_batch = prob_model.residual(u_trajectories, pde_param_batch).cpu()
+                print(f"unc_batch shape: {unc_batch.shape}")
+                unc_batch_mean = unc_batch.reshape((len(unc_batch), -1)).mean(1)
+                print(f"unc_batch_mean shape: {unc_batch_mean.shape}")
+                unc.append(unc_batch_mean)
+
             print(f"obtained trajectories shape: {u_trajectories.shape}")
             # save generated trajectories
             self.task.save_trajectories(u_trajectories, pde_param_batch,
@@ -97,6 +108,11 @@ class BatchSelection:
                                         pde_params_normed=pde_params_normed_batch)
         wandb.log({"al/al_iter": al_iter, "al/sim_time": time.time() - t})
         print("simulation  time", time.time() - t)
+
+        if isinstance(prob_model, al4pde.prob_models.PRE_model.PREModel):
+            save_path = os.path.join(self.task.traj_save_path, "unc_chosen" + str(al_iter) + ".pt")
+            unc = torch.concat(unc, dim=0)
+            torch.save(unc, save_path)
 
         prob_model.to(device)
 
