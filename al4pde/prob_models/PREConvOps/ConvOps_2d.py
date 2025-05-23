@@ -12,7 +12,7 @@ import numpy as np
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F
-from fft_conv_pytorch.fft_conv import * 
+from al4pde.prob_models.PREConvOps.fft_convops_pytorch import fft_conv
 
 def get_stencil(dims, deriv_order, taylor_order=2):
     if dims == 1:
@@ -168,7 +168,7 @@ class ConvOperator():
             field = field.unsqueeze(1)
 
         kernel = self.kernel.unsqueeze(0).unsqueeze(0)
-        convfft = fft_conv(field, kernel, padding=(self.kernel.shape[0]//2, self.kernel.shape[1]//2, self.kernel.shape[2]//2), inverse=inverse)
+        convfft = fft_conv.fft_conv(field, kernel, padding=(self.kernel.shape[0]//2, self.kernel.shape[1]//2, self.kernel.shape[2]//2), inverse=inverse)
 
         return convfft.squeeze(1)
 
