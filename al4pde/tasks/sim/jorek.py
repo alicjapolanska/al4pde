@@ -12,6 +12,26 @@ import glob
 import os
 from typing import List, Tuple
 
+
+def get_grid(data_path, n):
+    """
+    n : number of initial conditions
+    """
+    path_0 = jorek.get_jorek_file_path(data_path, 0)
+    fields, x, y = jorek.JOREK_electrostatic_single(path_0)
+
+    print("x shape ", gridx.shape, "y shape", gridy.shape)
+    gridx, gridy = torch.meshgrid(x, y, indexing='ij')
+    grid = torch.stack([gridx, gridy], dim=-1)
+    print("Grid shape ", grid.shape)
+
+    # Add batch 
+    grid = grid.expand([n, ] + list(grid.shape)) 
+    print("Grid shape ", grid.shape)
+
+    return grid.expand([n, ] + list(grid.shape))     # [bs, nx, ny, ]
+
+
 def get_jorek_file_path(jorek_data_dir, run_number):
     """
     Returns the full path to a JOREK output file based on the parent directory and run number.
@@ -201,18 +221,21 @@ class JOREKSim(Simulator):
         self.max_step = 200
 
 
-    def n_step_sim(self, ic: , pde_params, grid, init_time, n_steps):
+    def n_step_sim(self, ic: int, pde_params, grid, init_time, n_steps):
         """Load in JOREK run parametrised by ic
 
             Args:
-                ic (int) - """
+                ic (int) - Index of IC."""
         if n_steps > self.max_step:
             raise ValueError("Number of steps must be less than " + str(self.max_step))
         
         t_coord = jnp.array(self.get_t_coord(init_time, n_steps))
         uu_tc = torch.from_numpy(np.array(t_coord))
 
-        uu_traj = 
+        path = get_jorek_file_path(self.data_path, ic)
+        fields, gridx, gridy = JOREK_electrostatic_single(path)
+
+        uu_traj = fields
 
         return uu_traj, grid, uu_tc
 
