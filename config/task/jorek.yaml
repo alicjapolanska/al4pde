@@ -1,0 +1,21 @@
+defaults:
+  - base
+
+# subsampling relevant for only for the ML model
+reduced_resolution: 2
+reduced_resolution_t: 1
+
+ic_gen:
+  _target_: al4pde.tasks.ic_gen.ic_gen_jorek.ICGenJOREK
+  train_data_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/train"
+
+
+param_gen:
+  _target_: al4pde.tasks.param_gen.PDEParamGenerator
+  min_val: 0 
+  max_val: 0   
+  log_scale: false
+
+sim:
+  _target_: al4pde.tasks.sim.jorek.JOREKSim
+  data_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/train"
