@@ -12,7 +12,7 @@ import numpy as np
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F
-from al4pde.prob_models.PREConvOps.fft_convops_pytorch import fft_conv
+from al4pde.prob_models.PREConvOps.fft_conv_pytorch import fft_conv
 
 def get_stencil(dims, deriv_order, taylor_order=2):
     if dims == 1:
