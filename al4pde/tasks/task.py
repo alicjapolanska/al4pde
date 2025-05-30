@@ -68,60 +68,16 @@ class Task:
     def n_step_sim(self, ic: Tensor, pde_params: Tensor, grid: Tensor, init_time: Tensor, n_steps: int):
         return self.sim.n_step_sim(ic, pde_params, grid, init_time, n_steps)
 
-    def save_trajectories(self, u_trajectories, pde_params, u_grid_coords, u_tcoords,  al_iter, opt_batch_num,
-                          save_path=None, ic_params=None, pde_params_normed=None):
+    def save_trajectories(self, idxs, al_iter, save_path=None):
+        
         if save_path is None:
             save_path = self.traj_save_path
 
-        jnp_save_fname = self.pde_name + "_alstp_" + str(al_iter) + "_btch" + str(opt_batch_num)
-
-        names = [jnp_save_fname + "_traj", jnp_save_fname + "_param", None, "t_coordinate",
-                 jnp_save_fname + "_pde_params_normed"]
-        if self.spatial_dim == 1:
-            names[2] = "x_coordinate"
-        elif self.spatial_dim == 2:
-            names[2] = "xy_coordinate"
-        elif self.spatial_dim == 3:
-            names[2] = "xyz_coordinate"
-
-        data = [u_trajectories, pde_params, u_grid_coords, u_tcoords, pde_params_normed]
-        optional = [False, False, True, True, True]
-        if ic_params is not None:
-            for key in ic_params.keys():
-                names.append(jnp_save_fname + "_ic_params_" + key)
-                data.append(ic_params[key])
-                optional.append(True)
-
-        for i in range(len(data)):
-            if not optional[i] or data[i] is not None:
-                arr = data[i]
-                if isinstance(data[i], torch.Tensor):
-                    arr = arr.detach().cpu().numpy()
-                jnp.save(os.path.join(save_path, names[i]), arr)
+        save_name = self.pde_name + "_runs_al_iter_" + str(al_iter)
+        
+        np.save(os.path.join(save_path, save_name), idxs)
 
     def set_seed(self, seed):
         rng = torch.Generator(device=device).manual_seed(seed)
         self.ic_gen.set_rng(rng)
         self.param_gen.set_rng(rng)
-
-    def to_sim_format(self, traj):
-        """bx0x1x2tc to btx0x1x2c"""
-        if self.spatial_dim == 1:
-            return traj.permute(0, 2, 1, 3)
-        elif self.spatial_dim == 2:
-            return traj.permute(0, 3, 1, 2, 4)
-        elif self.spatial_dim == 3:
-            return traj.permute(0, 4, 1, 2, 3, 5)
-        else:
-            raise ValueError(self.spatial_dim)
-
-    def to_ml_format(self, traj):
-        """btx0x1x2c to bx0x1x2tc"""
-        if self.spatial_dim == 1:
-            return traj.permute(0, 2, 1, 3)
-        elif self.spatial_dim == 2:
-            return traj.permute(0, 2, 3, 1, 4)
-        elif self.spatial_dim == 3:
-            return traj.permute(0, 2, 3, 4, 1, 5)
-        else:
-            raise ValueError(self.spatial_dim)
