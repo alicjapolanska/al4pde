@@ -88,7 +88,7 @@ class BatchSelection:
             pde_param_batch = pde_params[i * self.batch_size: (i + 1) * self.batch_size]
             pde_params_normed_batch = pde_params_normed[i * self.batch_size: (i + 1) * self.batch_size]
 
-            u_trajectories, u_xcoords, u_tcoords = self.task.evolve_ic(ic_batch, pde_param_batch)
+            u_trajectories, u_xcoords, u_tcoords = self.task.evolve_ic(ic_batch, pde_param_batch) #add ic params - ix
 
             print(f"obtained trajectories shape: {u_trajectories.shape}")
             # save generated trajectories

@@ -122,17 +122,9 @@ class NPYDataset(TrajDataset):
 
         if pde_name == "jorek":
             _data, temp, temp = jorek.JOREK_electrostatic(folders)
-            _pde_par = np.zeros_like(_data)
+            _pde_par = 0
             grid = jorek.get_grid(folders, _data.shape[0])
 
-        else:
-            fdata_list, pde_param_list, grid = self.load_data_list(folders, regexp, max_size, pde_name)
-
-            # Each npy file has multiple ICs. Hence, we batch them along 0th dim to get shape (numICs, x, t, ch)
-            _data, _pde_par = self.stack_data(fdata_list, pde_param_list, max_size)
-
-        num_step = 1 if one_step else None
-        super().__init__(_data[::reduced_batch], _pde_par[::reduced_batch], grid, initial_step, num_step)
         print("number of trajectories in data:", len(_data))
 
     def stack_data(self, fdata_list, pde_param_list, max_size):
