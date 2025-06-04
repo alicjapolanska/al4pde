@@ -11,7 +11,7 @@ Data used for all operations should be in the shape: BS, Nt, Nx
 import numpy as np 
 import torch 
 import torch.nn.functional as F
-from fft_conv_pytorch.fft_conv import * 
+from al4pde.prob_models.PREConvOps.fft_conv_pytorch import fft_conv
 
 
 def get_stencil(dims, deriv_order, taylor_order=2):
@@ -154,7 +154,7 @@ class ConvOperator():
         if field.dim() == 3:
             field = field.unsqueeze(1)
         kernel = self.kernel.unsqueeze(0).unsqueeze(0)
-        convfft = fft_conv(field, kernel, padding=(self.kernel.shape[0]//2, self.kernel.shape[1]//2)).squeeze(1)
+        convfft = fft_conv.fft_conv(field, kernel, padding=(self.kernel.shape[0]//2, self.kernel.shape[1]//2)).squeeze(1)
 
         return convfft
     

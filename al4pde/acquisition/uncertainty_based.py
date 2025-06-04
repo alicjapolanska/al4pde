@@ -10,6 +10,8 @@ import os
 def top_k(unc: torch.Tensor, k: int) -> torch.Tensor:
     return torch.argsort(unc, descending=True)[:k]
 
+def second_top_k(unc: torch.Tensor, k: int) -> torch.Tensor:
+    return torch.argsort(unc, descending=True)[k:2*k]
 
 def power_sampling(unc: torch.Tensor, k: int, beta=1) -> torch.Tensor:
     weights = torch.pow(unc, beta)
@@ -32,7 +34,7 @@ class UncertaintyBased(PoolBased):
                          pred_batch_size=pred_batch_size)
         print("Init done")
         self.selection_mode = selection_mode
-        assert selection_mode in ["random", "top_k", "power"]
+        assert selection_mode in ["random", "top_k", "power", "second_top_k"]
         self.power_beta = power_beta
 
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
@@ -59,6 +61,8 @@ class UncertaintyBased(PoolBased):
         n_samples = self.num_batches(al_iter) * self.batch_size
         if self.selection_mode == "top_k":
             sel_idx = top_k(unc, n_samples)
+        elif self.selection_mode == "second_top_k":
+            sel_idx = second_top_k(unc, n_samples)
         elif self.selection_mode == "power":
             sel_idx = power_sampling(unc, n_samples, self.power_beta)
         elif self.selection_mode == "random":
