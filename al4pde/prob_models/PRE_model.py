@@ -52,9 +52,9 @@ class PREModel(ProbModel):
             #print("Field shape after permuting ", uu.shape)
 
             #Defining the required Convolutional Operations. 
-            D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device)
-            D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device)
-            D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device)
+            D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device, conv = 'spectral')
+            D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device, conv = 'spectral')
+            D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device, conv = 'spectral')
 
             res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
             #print("Residual shape ", res.shape)
@@ -72,10 +72,10 @@ class PREModel(ProbModel):
             uu = uu.permute(0, 3, 1, 2, 4)
             
             #Defining the required Convolutional Operations. 
-            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device)
-            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device)
-            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device)
-            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device)
+            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device, conv = 'spectral')
+            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device, conv = 'spectral')
+            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device, conv = 'spectral')
+            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device, conv = 'spectral')
 
             rho = uu[..., 0]
             u   = uu[..., 1]
