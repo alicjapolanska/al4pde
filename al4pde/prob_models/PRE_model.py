@@ -72,10 +72,10 @@ class PREModel(ProbModel):
             uu = uu.permute(0, 3, 1, 2, 4)
             
             #Defining the required Convolutional Operations. 
-            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device, conv = 'spectral')
-            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device, conv = 'spectral')
-            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device, conv = 'spectral')
-            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device, conv = 'spectral')
+            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device, taylor_order=2)
+            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device, taylor_order=2)
+            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device, taylor_order=2)
+            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device, taylor_order=2)
 
             rho = uu[..., 0]
             u   = uu[..., 1]
@@ -89,23 +89,24 @@ class PREModel(ProbModel):
             eta = pde_param[:,0].view(-1, 1, 1, 1)
             zeta = pde_param[:,1].view(-1, 1, 1, 1)
             
-            # mass_residual = self.D_t(rho) + rho*(self.D_x(u) + self.D_y(v)) + u*self.D_x(rho) + v*self.D_y(rho)
-            mass_residual = D_t(rho)*dx + rho*(D_x(u) + D_y(v))*dt + u*D_x(rho)*dx + v*D_y(rho)*dy
+            # mass_residual = self.D_t(rho)*self.dx*self.dy + rho*(self.D_x(u) + self.D_y(v))*self.dt*self.dx + u*self.D_x(rho)*self.dx*self.dt + v*self.D_y(rho)*self.dy*self.dt
 
-            mom_res_x = rho*D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*2*dt
-            mom_res_y = rho*D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*2*dt
+            # mom_res_x = rho*D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*2*dt
+            # mom_res_y = rho*D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*2*dt
+
+            mom_res_x = rho*(D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx) + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*dt
+            mom_res_y = rho*(D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx) + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*dt
 
             mom_residuals = mom_res_x + mom_res_y
 
-
-            residual = mass_residual + mom_residuals
+            # residual = mass_residual + mom_residuals
 
             if boundary: 
-                return residual.permute(0, 2, 3, 1)
+                return mom_residuals.permute(0, 2, 3, 1)
             else:
                 #Lose channels dimension here
-                residual = residual[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
-                return residual
+                mom_residuals = mom_residuals[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
+                return mom_residuals
             
         
     @property
