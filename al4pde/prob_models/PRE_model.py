@@ -72,10 +72,10 @@ class PREModel(ProbModel):
             uu = uu.permute(0, 3, 1, 2, 4)
             
             #Defining the required Convolutional Operations. 
-            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device, taylor_order=2)
-            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device, taylor_order=2)
-            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device, taylor_order=2)
-            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device, taylor_order=2)
+            D_t = ConvOps_2d.ConvOperator(domain='t', order=1, device=device, conv='spectral')
+            D_x = ConvOps_2d.ConvOperator(domain='x', order=1, device=device, conv='spectral')
+            D_y = ConvOps_2d.ConvOperator(domain='y', order=1, device=device, conv='spectral')
+            D_xx_yy = ConvOps_2d.ConvOperator(domain=('x','y'), order=2, device=device, conv='spectral'))
 
             rho = uu[..., 0]
             u   = uu[..., 1]
