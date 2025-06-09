@@ -34,7 +34,24 @@ def get_stencil(dims, deriv_order, taylor_order=2):
                 [0, -1, 0],
                 [0, 0, 0],
                 [0, 1, 0]
+            ], dtype=torch.float32)    
+        elif deriv_order == 3 and taylor_order == 2:
+            return torch.tensor([
+                [0, 0, 1/2, 0, 0],
+                [0, 0, -1, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, -1/2, 0, 0]
             ], dtype=torch.float32)
+        elif deriv_order == 3 and taylor_order == 4:
+            return torch.tensor([
+                [0, 0, -1/8, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, -13/8, 0, 0]
+                [0, 0, -1, 0, 0],
+                [0, 0, 1/8, 0, 0]
+            ], dtype=torch.float32)
+
     elif dims == 2:
         if deriv_order == 2 and taylor_order == 2:
             return torch.tensor([
@@ -82,26 +99,23 @@ class ConvOperator():
     """
     def __init__(self, domain=None, order=None, scale=1.0, taylor_order=2, conv='direct', device='cpu'):
 
-        try: 
-            self.domain = domain #Axis across with the derivative is taken. 
-            self.dims = len(self.domain) #Domain size
-            self.order = order #order of derivation
-            self.stencil = get_stencil(self.dims, self.order, taylor_order)
+        self.domain = domain #Axis across with the derivative is taken. 
+        self.dims = len(self.domain) #Domain size
+        self.order = order #order of derivation
+        self.stencil = get_stencil(self.dims, self.order, taylor_order)
 
-            if self.domain == 't':
-                self.stencil = self.stencil
-            elif self.domain == 'x':
-                self.stencil = self.stencil.T
-            elif self.domain == ('x','t'):
-                self.stencil = self.stencil
-            else:
-                raise ValueError("Invalid Domain. Must be either x or t")
-            
-            self.kernel = self.stencil
-            self.kernel = scale*self.kernel
-            self.kernel = self.kernel.to(device)
-        except:
-            pass
+        if self.domain == 't':
+            self.stencil = self.stencil
+        elif self.domain == 'x':
+            self.stencil = self.stencil.T
+        elif self.domain == ('x','t'):
+            self.stencil = self.stencil
+        else:
+            raise ValueError("Invalid Domain. Must be either x or t")
+        
+        self.kernel = self.stencil
+        self.kernel = scale*self.kernel
+        self.kernel = self.kernel.to(device)
 
         if conv == 'direct': 
             self.conv = self.convolution

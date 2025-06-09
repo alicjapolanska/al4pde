@@ -83,7 +83,6 @@ class PREModel(ProbModel):
             p   = uu[..., 3]
 
             #Handle batch size 1
-
             pde_param = torch.atleast_2d(pde_param)
 
             eta = pde_param[:,0].view(-1, 1, 1, 1)
@@ -107,6 +106,40 @@ class PREModel(ProbModel):
                 #Lose channels dimension here
                 mom_residuals = mom_residuals[...,1:-1,1:-1,1:-1].permute(0, 2, 3, 1)
                 return mom_residuals
+
+        if self.task.pde_name == "CENoForcing": 
+            print("Field shape before permuting ", uu.shape)
+            print("Shape of param ", pde_param.shape)
+
+            # solutions are [bs, nx, nt, nc] but for PRE code we need [BS, Nt, nx]
+            uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
+            uu = uu.permute(0, 2, 1) #permute for correct PRE computation
+
+
+            #Handle batch size 1
+            pde_param = torch.atleast_2d(pde_param)
+
+            alpha = pde_param[:,0].view(-1, 1, 1)
+            beta = pde_param[:,1].view(-1, 1, 1)
+            gamma = pde_param[:,2].view(-1, 1, 1)
+
+            D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device, conv='spectral')
+            D_x = ConvOps_1d.ConvOperator(domain='x', order=1, device=device, conv='spectral')
+            D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device, conv='spectral')
+            D_xxx = ConvOps_1d.ConvOperator(domain='x', order=3, device=device, conv='spectral')
+
+            # ce_residual = D_t(u) + alpha*D_x(u**2) - beta*D_xx(u) + gamma*D_xxx(u) 
+            ce_residual = D_t(uu)*2*dx**3 + alpha*D_x(uu**2)*2*dt*dx**2 - beta*D_xx(uu)*4*dt*dx + gamma*D_xxx(uu)*4*dt
+
+            print("Residual shape ", ce_residual.shape)
+
+            if boundary:
+                return ce_residual.permute(0, 2, 1).unsqueeze(-1)
+            else: 
+                ce_residual = ce_residual[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
+                print("Residual shape after permuting ", ce_residual.shape)
+                return ce_residual
+            
             
         
     @property
