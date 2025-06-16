@@ -7,7 +7,7 @@ reduced_resolution_t: 1
 
 ic_gen:
   _target_: al4pde.tasks.ic_gen.ic_gen_jorek.ICGenJOREK
-  train_data_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/train"
+  pool_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool"
 
 
 param_gen:
@@ -18,4 +18,4 @@ param_gen:
 
 sim:
   _target_: al4pde.tasks.sim.jorek.JOREKSim
-  data_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/train"
+  pool_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool"

@@ -4,9 +4,19 @@ import torch
 import numpy as np
 from al4pde.acquisition.batch_selection import BatchSelection
 from al4pde.prob_models.prob_model import ProbModel
+import os
+import re
+import tqdm
+import psutil
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+def print_mem_usage():
+    process = psutil.Process(os.getpid())
+    mem_MB = process.memory_info().rss / 1024 ** 2
+    print(f"Memory used: {mem_MB:.1f} MB")
+
+print_mem_usage()
 
 class PoolBased(BatchSelection):
     """Base class for all pool based approaches."""
@@ -19,27 +29,39 @@ class PoolBased(BatchSelection):
         self.pred_batch_size = pred_batch_size
 
         ic_params = []
-        ic = []
-        pde_params_normed = []
-        pde_params = []
-        with torch.no_grad():
-            for i in range(int(np.ceil(pool_size/batch_size))):
-                n_i = min(batch_size, max(0, pool_size - i * batch_size))
-                if n_i == 0:
-                    break
-                pde_params_normed_i = task.get_pde_params_normed(n_i)
-                pde_params_i = task.get_pde_params(pde_params_normed_i)
-                ic_params_i = task.get_ic_params(n_i)
-                ic.append(task.get_ic(ic_params_i, pde_params_i).cpu())
-                ic_params.append(ic_params_i.cpu())
-                pde_params.append(pde_params_i.cpu())
-                pde_params_normed.append(pde_params_normed_i.cpu())
+        self.pde_params = []
+        self.pde_params_normed = []
 
-            self.ic = torch.concat(ic, 0)
-            self.ic_params = torch.cat(ic_params, 0)
-            self.pde_params = torch.concat(pde_params, 0)
-            self.pde_params_normed = torch.concat(pde_params_normed, 0)
+        pattern = re.compile(r"jorek_run(\d+)\.h5")
 
+        print("Loading pool ics from", self.task.pool_path)
+
+        pool_files = [f for f in os.listdir(self.task.pool_path) if pattern.match(f)]
+        num_files = len(pool_files)
+        print(f"Found {num_files} files to load")
+
+        # Load first file to get IC shape and dtype/device
+        first_param = int(pattern.match(pool_files[0]).group(1))
+        first_ic = self.task.get_ic(first_param)
+        ic_shape = first_ic.shape
+        ic_dtype = first_ic.dtype
+        ic_device = first_ic.device
+
+        all_ics = torch.empty((num_files, *ic_shape), dtype=ic_dtype, device=ic_device)
+
+        for idx, filename in enumerate(tqdm.tqdm(pool_files)):
+
+            match = pattern.match(filename)
+            if match:
+                param = int(match.group(1))
+                current_ic = self.task.get_ic(param)
+                all_ics[idx] = current_ic
+                ic_params.append(param)
+
+        print("Loaded", len(ic_params), "initial conditions from pool")
+
+        self.ic = all_ics
+        self.ic_params = ic_params
         self.pool_mask = torch.ones((len(self.ic),), dtype=torch.bool)
         self.batch_size = batch_size
 

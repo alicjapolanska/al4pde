@@ -25,8 +25,8 @@ class Simulator:
         self.channel_names = channel_names
         self.autonomous = True
 
-    def __call__(self, ic, pde_params, grid):
-        res = self.n_step_sim(ic, pde_params, grid, self.ini_time, self.n_steps)
+    def __call__(self, ic, ic_params):
+        res = self.n_step_sim(ic, ic_params)
         if not torch.all(torch.isfinite((res[0]))):
             for i in range(len(res[0])):
                 if not torch.all(torch.isfinite((res[0][i]))):

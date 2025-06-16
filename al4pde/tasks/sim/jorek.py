@@ -3,7 +3,6 @@ import jax
 import jax.numpy as jnp
 from jax import device_put, lax
 import numpy as np
-from al4pde.tasks.solver_utils import Courant, Courant_diff, bc, limiting
 from al4pde.tasks.sim.sim import Simulator
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import tqdm
@@ -17,12 +16,11 @@ def get_grid(data_path, n):
     """
     n : number of initial conditions
     """
-    path_0 = jorek.get_jorek_file_path(data_path, 0)
-    fields, x, y = jorek.JOREK_electrostatic_single(path_0)
+    path_1 = get_jorek_file_path(data_path, 1)  # Get path to the first JOREK file
+    fields, x, y = JOREK_electrostatic_single(path_1)
 
-    print("x shape ", gridx.shape, "y shape", gridy.shape)
-    gridx, gridy = torch.meshgrid(x, y, indexing='ij')
-    grid = torch.stack([gridx, gridy], dim=-1)
+    print("x shape ", x.shape, "y shape", y.shape)
+    grid = torch.stack([x, y], dim=-1)
     print("Grid shape ", grid.shape)
 
     # Add batch 
@@ -32,7 +30,7 @@ def get_grid(data_path, n):
     return grid.expand([n, ] + list(grid.shape))     # [bs, nx, ny, ]
 
 
-def get_jorek_file_path(jorek_data_dir, run_number):
+def get_jorek_file_path_subfolders(jorek_data_dir, run_number):
     """
     Returns the full path to a JOREK output file based on the parent directory and run number.
 
@@ -66,6 +64,33 @@ def get_jorek_file_path(jorek_data_dir, run_number):
 
     return filepath
 
+def get_jorek_file_path(jorek_data_dir, run_number):
+    """
+    Returns the full path to a JOREK output file based on the parent directory and run number.
+
+    Parameters:
+        jorek_data_dir (str): Path to the directory containing runs.
+        run_number (str/int): The run number to locate (e.g., 42).
+
+    Returns:
+        str: Full path to the corresponding 'jorek_runXXXX.h5' file.
+
+    Raises:
+        FileNotFoundError: If the expected file does not exist.
+    """
+
+    if not isinstance(run_number, str):
+        run_str = f"{run_number:04d}"
+    else:
+        run_str = run_number.zfill(4)
+
+    filename = f"jorek_run{run_str}.h5"
+    filepath = os.path.join(jorek_data_dir, filename)
+
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Expected file not found: {filepath}")
+
+    return filepath
 
 
 def stacked_fields(variables: List[np.ndarray]) -> torch.Tensor:
@@ -145,7 +170,7 @@ def JOREK_electrostatic_list(data_loc: str, ixs: list[int]) -> Tuple[torch.Tenso
                 containing fields of dimensions BS, Nx, Ny, Nt, Nc with channels rho, phi, T,
                 x grid, y grid and timestep. Runs from each file are stacked in batch dimension."""
 
-        rho_array, phi_array, T_array = [], [], []
+    rho_array, phi_array, T_array = [], [], []
     files = glob.glob(data_loc + folders[ii] + '/*.h5')
 
     for run_number in tqdm.tqdm(ixs, desc="Loading JOREK runs"):
@@ -211,28 +236,31 @@ class JOREKSim(Simulator):
     """Class to load in presimulated data from the JOREK dataset (Neural-Parareal electrostatic Dataset 
         (Zenodo 10.5281/zenodo.11099659) to use for active learning experiments."""
 
-    def __init__(self, data_path):
+    def __init__(self, pool_path):
         dt = 1.5e-6 #1.5 microseconds
         ini_time = 0
         fin_time = dt*200 #double check if not 200
         channel_names=["rho", "phi", "T"]
         super().__init__(pde_name="jorek", num_pde_params=1, spatial_dim=2, num_channels=3, dt=dt, ini_time=ini_time, fin_time=fin_time, channel_names=channel_names)
-        self.data_path = data_path
+        self.pool_path = pool_path
         self.max_step = 200
 
 
-    def n_step_sim(self, ic: int, pde_params, grid, init_time, n_steps):
+    def n_step_sim(self, ic, ic_params):
         """Load in JOREK run parametrised by ic
 
             Args:
-                ic (int) - Index of IC."""
-        if n_steps > self.max_step:
-            raise ValueError("Number of steps must be less than " + str(self.max_step))
+                ic (int) - Initial condition.
+                ic_params (int) - Index of IC."""
+
+        #if n_steps > self.max_step:
+        #    raise ValueError("Number of steps must be less than " + str(self.max_step))
         
         t_coord = jnp.array(self.get_t_coord(init_time, n_steps))
         uu_tc = torch.from_numpy(np.array(t_coord))
 
-        path = get_jorek_file_path(self.data_path, ic)
+        path = get_jorek_file_path(self.data_path, ic_params)
+        path = os.path.join(self.data_path, f"jorek_run{run_str}.h5")
         fields, gridx, gridy = JOREK_electrostatic_single(path)
 
         uu_traj = fields

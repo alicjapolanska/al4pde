@@ -2,6 +2,7 @@ import shutil
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import wandb
+wandb.init(mode="offline")
 import os
 os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".10"
 import torch
@@ -44,6 +45,7 @@ def main(cfg: DictConfig):
     set_current_seed(cfg.seed, 0, sampling_finished=True, task=None, use_test=use_test)
     run_save_path = os.path.join(cfg.task.run_save_path, run_id)
     task = hydra.utils.instantiate(cfg.task, run_save_path=run_save_path)
+    print("task", task, flush=True)
     acq_strat = build_strategy(task, cfg.acquisition)
     print("acq", acq_strat, flush=True)
     prob_model = build_prob_model(task, cfg.prob_model)

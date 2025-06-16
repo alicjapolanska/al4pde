@@ -44,21 +44,22 @@ class Task:
         self.img_save_path = os.path.join(run_save_path, "img")
         os.makedirs(self.img_save_path, exist_ok=True)
         self.train_data_folders = [self.traj_save_path]
+        self.pool_path = os.path.join(data_path, self.pde_name, "pool")
 
     def get_grid(self, n=1):
         return self.ic_gen.get_grid(n)
 
     def get_ic_params(self, n: int) -> TensorDict:
-        return self.ic_gen.initialize_ic_params(n)
+        pass
 
-    def get_ic(self, ic_params: TensorDict, pde_params: Tensor) -> Tensor:
+    def get_ic(self, ic_params, pde_params = None) -> Tensor:
         return self.ic_gen.generate_initial_conditions(ic_params, pde_params)
 
     def get_pde_params_normed(self, n: int) -> Tensor:
-        return self.param_gen.get_normed_pde_params(n)
+        pass
 
     def get_pde_params(self, pde_params_normed: Tensor) -> Tensor:
-        return self.param_gen.get_pde_params(pde_params_normed)
+        pass
 
     def evolve_ic(self, ic: Tensor, pde_params: Tensor, grid: Tensor = None):
         if grid is None:
@@ -68,11 +69,13 @@ class Task:
     def n_step_sim(self, ic: Tensor, pde_params: Tensor, grid: Tensor, init_time: Tensor, n_steps: int):
         return self.sim.n_step_sim(ic, pde_params, grid, init_time, n_steps)
 
-    def save_trajectories(self, idxs, al_iter, save_path=None):
+    def save_trajectories(self, ic_params, save_path=None):
         
         if save_path is None:
             save_path = self.traj_save_path
 
+        for ix in ic_params:
+            ic_params[ix] = ic_params[ix].to(device)
         save_name = self.pde_name + "_runs_al_iter_" + str(al_iter)
         
         np.save(os.path.join(save_path, save_name), idxs)
