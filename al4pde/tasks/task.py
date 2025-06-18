@@ -3,6 +3,7 @@ import torch
 from torch import Tensor
 import jax.numpy as jnp
 from tensordict import TensorDict
+import h5py
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -69,16 +70,35 @@ class Task:
     def n_step_sim(self, ic: Tensor, pde_params: Tensor, grid: Tensor, init_time: Tensor, n_steps: int):
         return self.sim.n_step_sim(ic, pde_params, grid, init_time, n_steps)
 
-    def save_trajectories(self, ic_params, save_path=None):
-        
+    def save_trajectories(self, run_index, source_folder, save_path=None):
+        """
+        Copies a specific run from the source folder (pool or init) to the training directory.
+
+        Args:
+            run_index (int): Index of the run to copy.
+            source_folder (str): Folder where the run is located (e.g., 'pool' or 'initial').
+            save_path (str, optional): Destination path for saving the run. Defaults to training directory.
+        """
+
         if save_path is None:
             save_path = self.traj_save_path
 
-        for ix in ic_params:
-            ic_params[ix] = ic_params[ix].to(device)
-        save_name = self.pde_name + "_runs_al_iter_" + str(al_iter)
-        
-        np.save(os.path.join(save_path, save_name), idxs)
+        source_path = os.path.join(self.data_path, self.pde_name, source_folder)
+        run_file = f"run_{run_index:04d}.h5"  # Jorek naming convention
+        source_file = os.path.join(source_path, run_file)
+
+        if not os.path.exists(source_file):
+            raise FileNotFoundError(f"Run file {source_file} does not exist in {source_folder}.")
+
+        destination_file = os.path.join(save_path, run_file)
+        os.makedirs(save_path, exist_ok=True)
+
+        # Copy the HDF5 file
+        with h5py.File(source_file, 'r') as src, h5py.File(destination_file, 'w') as dest:
+            for key in src.keys():
+                src.copy(key, dest)
+
+        print(f"Copied run {run_index} from {source_folder} to {save_path}.")
 
     def set_seed(self, seed):
         rng = torch.Generator(device=device).manual_seed(seed)

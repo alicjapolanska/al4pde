@@ -13,7 +13,7 @@ from jax.lib import xla_bridge
 
 from al4pde.utils import load_checkpoint, save_checkpoint, set_current_seed
 from al4pde.evaluation.visualization import end_of_al_iter_plots
-from scripts.gen_data import generate_data
+from scripts.gen_data import generate_data_init
 from al4pde.prob_models.build_prob_model import build_prob_model
 from al4pde.acquisition.build_selection import build_strategy
 
@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
             shutil.copytree(initial_data_path, task.traj_save_path, dirs_exist_ok=True)
 
         else:
-            generate_data(task, task.traj_save_path, cfg.task.data_gen.num_initial_batches, "init",
+            generate_data_init(task, task.traj_save_path, cfg.task.data_gen.num_initial_batches, "init",
                           cfg.task.data_gen.batch_size)
         first_al_iter = 0
 

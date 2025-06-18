@@ -16,7 +16,12 @@ def get_grid(data_path, n):
     """
     n : number of initial conditions
     """
-    path_1 = get_jorek_file_path(data_path, 1)  # Get path to the first JOREK file
+    # Find any available JOREK file in the data path
+    files = glob.glob(os.path.join(data_path, "*.h5"))
+    if not files:
+        raise FileNotFoundError(f"No JOREK files found in {data_path}")
+    
+    path_1 = files[0]  # Use the first available file
     fields, x, y = JOREK_electrostatic_single(path_1)
 
     print("x shape ", x.shape, "y shape", y.shape)
@@ -262,6 +267,7 @@ class JOREKSim(Simulator):
         path = get_jorek_file_path(self.data_path, ic_params)
         path = os.path.join(self.data_path, f"jorek_run{run_str}.h5")
         fields, gridx, gridy = JOREK_electrostatic_single(path)
+        grid = get_grid(self.pool_path, 1)
 
         uu_traj = fields
 
