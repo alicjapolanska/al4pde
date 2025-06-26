@@ -8,6 +8,9 @@ def _get_stats(train_loader, idx):
     n = len(train_loader.sampler)
     mean_channels = 0
     for batch in train_loader:
+        print("batch length getting stats", len(batch))
+        for b in batch:
+            print("batch shape", b.shape)
         b = batch[idx]
         mean_channels += b.flatten(0, -2).mean(0) * len(b) / n
 
@@ -38,12 +41,21 @@ class TaskNormalizer(torch.nn.Module):
         self.std_grid_coord = torch.nn.Parameter(torch.Tensor(), requires_grad=False)
 
     def update(self, train_loader: DataLoader):
-        self.mean_channels.data, self.std_channels.data = _get_stats(train_loader, 1)
-        self.mean_grid_coord.data, self.std_grid_coord.data = _get_stats(train_loader, 2)
-        self.mean_parameters.data, self.std_parameters.data = _get_stats(train_loader, 3)
-        print("std channels", self.std_channels)
-        print("std grid", self.std_grid_coord)
-        print("std params", self.std_parameters)
+        print("Calculating normalization statistics for the task...")
+        #self.mean_channels.data, self.std_channels.data, self.mean_grid_coord.data, self.std_grid_coord.data, self.mean_parameters.data, self.std_parameters.data = None, None, None, None, None, None #Clear previous values
+        if True:
+            with torch.no_grad():
+                self.mean_channels.data, self.std_channels.data = _get_stats(train_loader, 1)
+                self.mean_grid_coord.data, self.std_grid_coord.data = _get_stats(train_loader, 2)
+                #self.mean_parameters.data, self.std_parameters.data = _get_stats(train_loader, 3)
+                # Save normalization statistics to a text file
+                with open("normalization_stats.txt", "w") as f:
+                    f.write("Mean Channels: {}\n".format(self.mean_channels.tolist()))
+                    f.write("Std Channels: {}\n".format(self.std_channels.tolist()))
+                    f.write("Mean Grid Coord: {}\n".format(self.mean_grid_coord.tolist()))
+                    f.write("Std Grid Coord: {}\n".format(self.std_grid_coord.tolist()))
+                print("std channels", self.std_channels)
+                print("std grid", self.std_grid_coord)
 
     def norm_input_batch(self, xx: Tensor, yy: Tensor, grid: Tensor, pde_param: Tensor):
         return self.norm_traj(xx), self.norm_traj(yy), self.norm_grid(grid), self.norm_param(pde_param)

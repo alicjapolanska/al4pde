@@ -231,10 +231,10 @@ class FNO2d(nn.Module):
 
     def forward(self, x, grid):
         # x dim = [b, x1, x2, t*v]
+        #print(f"x shape: {x.shape}, grid shape: {grid.shape}", flush=True)
         x = torch.cat((x, grid), dim=-1)
         x = self.fc0(x)
         x = x.permute(0, 3, 1, 2)
-
         # Pad tensor with boundary condition
         x = F.pad(x, [0, self.padding, 0, self.padding])
 

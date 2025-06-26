@@ -158,20 +158,36 @@ class FNOWrapper(ModelWrapper):
 
     def forward(self, xx, grid, pde_param=None, t_idx=None, return_features=False):
 
+        #print(f"pde_param at start of forward: {pde_param}, shape: {pde_param.shape}")
+        #print(f"t_idx at start of forward: {t_idx}, shape: {t_idx.shape}")
+
+        #print("Forward fno wrapper")
+        #print("xx shape before norm:", xx.shape)
+        #print("grid shape before norm:", grid.shape)
+
+
         if self.norm_mode is not None:
             xx = self.task_norm.norm_traj(xx)
             grid = self.task_norm.norm_grid(grid)
-            if pde_param is not None:
-                pde_param = self.task_norm.norm_param(pde_param)
+
+        #print("xx shape after norm:", xx.shape)
+        #print("grid shape after norm:", grid.shape)
         dimensions = len(xx.shape)
         if pde_param is not None:
+
+            #print("t_idx shape:", t_idx.shape)
+            #print("t_idx:", t_idx)
+            #print("pde_param shape before concat:", pde_param.shape)
             if t_idx is not None and not self.task.sim.autonomous:
                 pde_param = torch.concat([pde_param, t_idx[:, None]], -1)
+            #print("pde_param shape after concat:", pde_param.shape)
             if dimensions == 4:
                 xx = torch.cat((xx, pde_param[:, None, None, :].repeat(1, xx.shape[1], xx.shape[-2], 1)), dim=-1)
             elif dimensions == 5:
+                #print("Pde parameter shape forward fno\:", pde_param.shape)
+                #print("pde param", pde_param)
                 xx = torch.cat((xx, pde_param[:, None, None, None, :].repeat(1, xx.shape[1], xx.shape[2],
-                                                                             xx.shape[-2], 1)),
+                                                                             xx.shape[3], 1)),
                                dim=-1)
             elif dimensions == 6:
                 xx = torch.cat((xx, pde_param[:, None, None, None, None, :].repeat(1, xx.shape[1], xx.shape[2],
@@ -182,6 +198,8 @@ class FNOWrapper(ModelWrapper):
                 out, feat = self.model(xx, grid, True)
                 out = out[..., : -pde_param.shape[-1]]
             else:
+                #print("xx shape passed to forward:", xx.shape)
+                #print("grid shape passed to forward:", grid.shape)
                 out = self.model(xx, grid)[..., :-pde_param.shape[-1]]
         else:
             if return_features:  # if statement because not everywhere implemented and normal call should still work

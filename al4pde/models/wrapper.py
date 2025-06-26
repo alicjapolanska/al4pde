@@ -49,6 +49,11 @@ class ModelWrapper(Model):
 
     def init_training(self, al_iter, load_train_data=True):
         print("init training")
+        try:
+            print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+            print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+        except AttributeError:
+            print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
 
         self.model = self.model_factory().to(device)
         self.model.train()
@@ -62,6 +67,13 @@ class ModelWrapper(Model):
         self.norm_max_counter = 0
         self.max_norm = 0
         if load_train_data:
+            try:
+                print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+                print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+            except AttributeError:
+                print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
+                print("loading train data")
+
             train_data = NPYDataset(
                 pde_name=self.task.pde_name,
                 folders=self.task.train_data_folders,
@@ -72,13 +84,38 @@ class ModelWrapper(Model):
                 skip_initial_steps=self.skip_initial_steps,
             ).set_num_steps(self.num_train_steps)
             self.train_data = train_data
+
+            try:
+                print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+                print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+            except AttributeError:
+                print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
+
+            print("set train loader", flush=True)
             self._train_loader = torch.utils.data.DataLoader(train_data, batch_size=self.batch_size,
                                                              num_workers=self.num_workers, shuffle=True)
+            
+            try:
+                print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+                print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+            except AttributeError:
+                print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
+        
+            print("set train loader full traj", flush=True)
             self._train_loader_full = torch.utils.data.DataLoader(train_data.set_num_steps(None),
                                                                   batch_size=self.batch_size,
                                                                   num_workers=self.num_workers,
                                                                   shuffle=True)
+            
+            try:
+                print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+                print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+            except AttributeError:
+                print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
+
         if self._val_loader is None:
+            print("set val loader", flush=True)
+
             val_data = NPYDataset(
                 pde_name=self.task.pde_name,
                 folders=[self.task.eval_set_path, ],
@@ -91,17 +128,28 @@ class ModelWrapper(Model):
 
             self._val_loader = torch.utils.data.DataLoader(val_data, batch_size=self.batch_size,
                                                            num_workers=self.num_workers, shuffle=False)
+            
+            try:
+                print("Memory usage:", torch.cuda.memory_allocated(device), flush=True)
+                print("Max memory usage:", torch.cuda.max_memory_allocated(device), flush=True)
+            except AttributeError:
+                print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
 
         if al_iter == 0:
+            print("Setting task norm", flush=True)
             self.task_norm = TaskNormalizer()
+            print("updating task norm with train loader", flush=True)
             self.task_norm.update(self.train_loader)
             self.task_norm.to(device)
             self.first_iter_nb = len(self.train_loader)
+            print("initialising loss", flush=True)
             self.loss.init_training(self.task_norm, self.initial_step)
         elif self.norm_mode == "every":
             self.task_norm = TaskNormalizer()
             self.task_norm.cpu().update(self.train_loader)
             self.task_norm.to(device)
+
+        print("ModelWrapper initialized with task norm:", self.task_norm, flush=True)
 
     @property
     def train_loader_full_traj(self):
@@ -130,7 +178,10 @@ class ModelWrapper(Model):
         else:
             raise ValueError(self.noise_mode)
 
+        #print("Beginning training loader in model wrapper")
+
         for batch_idx, (xx, yy, grid, pde_param, t_idx) in enumerate(self.train_loader):
+            #print("pde param passed to get_loss", pde_param, pde_param.shape, flush=True)
             xx = xx.to(device)
             yy = yy.to(device)
             grid = grid.to(device)
@@ -138,6 +189,9 @@ class ModelWrapper(Model):
             t_idx = t_idx.to(device)
             _batch = yy.size(0)
 
+            #print("Getting loss for batch", batch_idx, "of size", _batch, flush=True)
+            #print("pde param passed to get_loss", pde_param, pde_param.shape, flush=True)
+            #print("xx shape:", xx.shape, "yy shape:", yy.shape, "grid shape:", grid.shape, "t_idx shape:", t_idx.shape, flush=True)
             pred, loss = get_loss(xx, yy, grid, pde_param, t_idx, self, current_epoch, num_epoch,
              self.training_type, std, self.block_grad)
 

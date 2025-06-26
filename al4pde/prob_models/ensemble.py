@@ -35,6 +35,7 @@ class Ensemble(ProbModel):
 
     def train_n_epoch(self, al_iter: int, num_epoch: int, step_offset: int, vis: bool = True,
                       prefix: str = "",is_last=False) -> float:
+        print("Synchronized training:", self.synchronized_training, flush=True)
         if self.synchronized_training:
             return super().train_n_epoch(al_iter, num_epoch, step_offset)
         else:
@@ -62,6 +63,7 @@ class Ensemble(ProbModel):
         for m in self.base_models:
             m.init_training(al_iter, load_train_data)
         self.task_norm = self.base_models[0].task_norm
+        print("Ensemble initialized with task norm:", self.task_norm, flush=True)
 
     @property
     def val_loader(self):

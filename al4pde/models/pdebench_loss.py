@@ -159,13 +159,16 @@ def get_loss(xx, yy, grid, pde_param, t_idx, model, current_epoch, num_epoch,
     for t in range(model.initial_step, yy.shape[-2]):
 
         y = yy[..., t:t + 1, :]
-
+        #print("xx shape before forward:", xx.shape)
         xx = xx + torch.normal(torch.zeros_like(xx), noise_std)  # add random noise
 
         abs_t_idx = t_idx + t - model.initial_step
 
         if block_grad:
             xx = xx.detach()
+
+        #print(f"pde_param shape before forward: {pde_param.shape}")
+        #print(f"abs_t_idx shape before forward: {abs_t_idx.shape}")
 
         # Model run
         model_pred = model(xx, grid, pde_param, abs_t_idx)  # im: [b, x1, ..., xd, 1, v+1]

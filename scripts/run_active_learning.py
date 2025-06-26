@@ -4,7 +4,7 @@ from omegaconf import OmegaConf, DictConfig
 import wandb
 wandb.init(mode="offline")
 import os
-os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".10"
+os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".05"  # Reduce memory allocation
 import torch
 import jax.numpy as jnp
 jnp.arange(0, 100)
@@ -77,15 +77,18 @@ def main(cfg: DictConfig):
             shutil.copytree(initial_data_path, task.traj_save_path, dirs_exist_ok=True)
 
         else:
-            generate_data_init(task, task.traj_save_path, cfg.task.data_gen.num_initial_batches, "init",
-                          cfg.task.data_gen.batch_size)
+            generate_data_init(task)
         first_al_iter = 0
 
     for al_iter in range(first_al_iter, cfg.num_al_iter):
         is_last = al_iter == cfg.num_al_iter - 1
 
         print("\nactive learning iteration " + str(al_iter), flush=True)
-
+        try:
+            print("Memory usage before training:", torch.cuda.memory_allocated(device), flush=True)
+            print("Max memory usage before training:", torch.cuda.max_memory_allocated(device), flush=True)
+        except AttributeError:
+            print("CUDA memory stats unavailable. Ensure CUDA is properly configured.", flush=True)
         # retrain ensemble model
         set_current_seed(cfg.seed, al_iter, sampling_finished=True, task=task,  use_test=use_test)
         prob_model.train_n_epoch(al_iter, num_epoch, num_epoch * al_iter, is_last=is_last)
