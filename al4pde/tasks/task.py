@@ -84,7 +84,7 @@ class Task:
             save_path = self.traj_save_path
 
         source_path = os.path.join(self.data_path, self.pde_name, source_folder)
-        run_file = f"run_{run_index:04d}.h5"  # Jorek naming convention
+        run_file = f"jorek_run{run_index:04d}.h5"  # Jorek naming convention
         source_file = os.path.join(source_path, run_file)
 
         if not os.path.exists(source_file):

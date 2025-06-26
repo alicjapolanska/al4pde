@@ -29,10 +29,11 @@ def get_grid(data_path, n):
     print("Grid shape ", grid.shape)
 
     # Add batch 
-    grid = grid.expand([n, ] + list(grid.shape)) 
-    print("Grid shape ", grid.shape)
+    if n:
+        grid = grid.expand([n, ] + list(grid.shape)) 
+        print("Grid shape ", grid.shape)
 
-    return grid.expand([n, ] + list(grid.shape))     # [bs, nx, ny, ]
+    return grid    # [bs, nx, ny, ]
 
 
 def get_jorek_file_path_subfolders(jorek_data_dir, run_number):
@@ -127,31 +128,26 @@ def JOREK_electrostatic(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torc
                 containing fields of dimensions BS, Nx, Ny, Nt, Nc with channels rho, phi, T,
                 x grid, y grid and timestep. Runs from each file are stacked in batch dimension."""
 
-    folders = [name for name in os.listdir(data_loc) if os.path.isdir(os.path.join(data_loc, name))]
-    found_files = False 
-    for ii in range(len(folders)):
-        rho_array, phi_array, T_array = [], [], []
-        files = glob.glob(data_loc + folders[ii] + '/*.h5')
-        for jj in tqdm.tqdm(range(len(files))):
-            with h5py.File(files[jj], 'r') as f:
-                found_files = True
-                #keys = list(f.keys())
-                rho = f['rho']
-                phi = f['Phi']
-                T = f['T']
-                Rgrid = f['R_mesh(nR,nZ)']
-                Zgrid = f['Z_mesh(nR,nZ)']
+    files = glob.glob(os.path.join(data_loc, "*.h5"))
+    if not files:
+        raise ValueError("No files found in ", data_loc)
 
-                rho_array.append(np.asarray(rho, dtype=np.float32))
-                phi_array.append(np.asarray(phi, dtype=np.float32))
-                T_array.append(np.asarray(T, dtype=np.float32))
-                x = np.asarray(Rgrid, dtype=np.float32)
-                y = np.asarray(Zgrid, dtype=np.float32)
+    rho_array, phi_array, T_array = [], [], []
+    for file_path in tqdm.tqdm(files, desc="Loading JOREK files"):
+        with h5py.File(file_path, 'r') as f:
+            rho = f['rho']
+            phi = f['Phi']
+            T = f['T']
+            Rgrid = f['R_mesh(nR,nZ)']
+            Zgrid = f['Z_mesh(nR,nZ)']
 
-    if not found_files:
-        raise ValueError("No files found in subfolders of ", data_loc)
-    
-    rho = np.asarray(rho_array)
+            rho_array.append(np.asarray(rho, dtype=np.float32))
+            phi_array.append(np.asarray(phi, dtype=np.float32))
+            T_array.append(np.asarray(T, dtype=np.float32))
+            x = np.asarray(Rgrid, dtype=np.float32)
+            y = np.asarray(Zgrid, dtype=np.float32)
+
+    rho = np.asarray(rho_array)*10**-(20)
     phi = np.asarray(phi_array)
     T = np.asarray(T_array)
 
@@ -159,7 +155,6 @@ def JOREK_electrostatic(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torc
     fields = stacked_fields([rho, phi, T])
 
     x, y = torch.tensor(x), torch.tensor(y)
-
 
     return fields, x, y
 
@@ -195,7 +190,7 @@ def JOREK_electrostatic_list(data_loc: str, ixs: list[int]) -> Tuple[torch.Tenso
             x = np.asarray(Rgrid, dtype=np.float32)
             y = np.asarray(Zgrid, dtype=np.float32)
     
-    rho = np.asarray(rho_array)
+    rho = np.asarray(rho_array)*10**-(20)
     phi = np.asarray(phi_array)
     T = np.asarray(T_array)
 
@@ -221,7 +216,7 @@ def JOREK_electrostatic_single(data_loc: str) -> Tuple[torch.Tensor, torch.Tenso
 
     with h5py.File(data_loc, 'r') as f:
         #keys = list(f.keys())
-        rho = np.asarray(f['rho'], dtype=np.float32)
+        rho = np.asarray(f['rho'], dtype=np.float32)*10**-(20)
         phi = np.asarray(f['Phi'], dtype=np.float32)
         T = np.asarray(f['T'])
         Rgrid = f['R_mesh(nR,nZ)']
