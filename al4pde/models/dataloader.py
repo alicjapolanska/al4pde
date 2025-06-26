@@ -72,6 +72,7 @@ class TrajDataset(Dataset):
         self.initial_step = initial_step
         self.data = data
         self.pde_params = pde_params
+        print("pde params shape when initialising TrajDataset:", pde_params.shape)
         self.grid = grid
         if num_steps is not None:
             self._set_num_steps(num_steps)
@@ -80,14 +81,21 @@ class TrajDataset(Dataset):
         self.t = torch.arange(data.shape[-2]).float()
 
     def __len__(self):
-        return self.num_sub_trajs
+        return self.data.shape[0]
 
     def __getitem__(self, idx):
-        true_traj_idx = int(idx / self.num_sub_per_traj)
-        start_t_idx = idx % self.num_sub_per_traj
-        ic = self.data[true_traj_idx, ...,  start_t_idx:start_t_idx + self.initial_step, :]
-        traj = self.data[true_traj_idx, ..., start_t_idx: start_t_idx + self.traj_len, :]
-        return ic, traj, self.grid, self.pde_params[true_traj_idx], self.t[start_t_idx]
+        #print("getting item: ", idx)
+        ic = self.data[idx, ..., 0, :].unsqueeze(-2)
+        #print("ic shape getting item: ", ic.shape)
+        traj = self.data[idx, ...]
+        #print("traj shape getting item: ", traj.shape)
+        pde_params = self.pde_params[idx, ...]
+        #print("item pde params getting item: ", pde_params)
+
+        assert pde_params.numel() > 0, f"Empty pde_params at idx {idx}!"
+        assert not torch.isnan(pde_params).any(), f"NaN in pde_params at idx {idx}!"
+
+        return ic, traj, self.grid, pde_params, self.t[idx]
 
     def set_num_steps(self, num_steps):
         return TrajDataset(self.data, self.pde_params, self.grid, self.initial_step, num_steps)
@@ -120,60 +128,18 @@ class NPYDataset(TrajDataset):
         self.reduced_resolution = reduced_resolution
         self.skip_initial_steps = skip_initial_steps
 
-        if pde_name == "jorek":
-            _data, temp, temp = jorek.JOREK_electrostatic(folders)
-            _pde_par = 0
-            grid = jorek.get_grid(folders, _data.shape[0])
+        if len(folders) == 1:
+            folders = folders[0]
+        print("Loading from ", folders)
+        _data, temp, temp = jorek.JOREK_electrostatic(folders)
+        _pde_par = torch.zeros((_data.shape[0], 1))  # JOREK has no pde params
+        grid = jorek.get_grid(folders, 0)
+        print("data shape:", _data.shape)
+        super().__init__(_data, _pde_par, grid, initial_step)
 
+        print("data shape:", _data.shape)
+        print("pde par shape ", _pde_par.shape)
+        print("pde par ", _pde_par)
+        print("grid shape ", grid.shape)
+        print("initial step", initial_step)
         print("number of trajectories in data:", len(_data))
-
-    def stack_data(self, fdata_list, pde_param_list, max_size):
-        _data = np.vstack(fdata_list)
-        _pde_par = np.vstack(pde_param_list)
-        if max_size is not None:
-            _data = _data[:max_size]
-            _pde_par = _pde_par[:max_size]
-        if not np.all(np.isfinite(_data)):
-            raise ValueError("nan or inf in data")
-        _data = torch.from_numpy(_data)  # (bs, numICs, x, t, ch)
-        _pde_par = torch.from_numpy(_pde_par)
-        return _data, _pde_par
-
-    def load_data_list(self, folders, regexp, max_size, pde_name):
-        fdata_list = []
-        pde_param_list = []
-        if regexp is not None:
-            regexp = re.compile(regexp)
-
-        n_data = 0
-        grid, spatial_dim = load_grid(folders, self.reduced_resolution)
-
-        for folder in folders:
-            # Define path to files
-            root_path = os.path.abspath(folder)
-
-            npy_filenames = glob.glob("*btch*_traj.npy", root_dir=root_path)
-            npy_filenames = sorted(npy_filenames)
-
-            for fname in npy_filenames:
-                if regexp is None or regexp.match(fname):
-
-                    pde_param_file = fname.split("_traj")[0] + "_param.npy"
-                    pde_params = np.load(os.path.join(root_path, pde_param_file))
-
-                    fdata = load_fdata(root_path, fname, pde_name, spatial_dim)
-                    fdata = subsample_trajectory(fdata, self.reduced_resolution, self.reduced_resolution_t)
-                    fdata = fdata[..., self.skip_initial_steps:, :]
-                    n_data += len(fdata)
-
-                    fdata_list.append(fdata)
-                    pde_param_list.append(pde_params)
-
-                    if max_size is not None and n_data >= max_size:
-                        break
-
-        if len(fdata_list) == 0:
-            raise IOError("No data found in:", folders)
-
-        return fdata_list, pde_param_list, grid
-
