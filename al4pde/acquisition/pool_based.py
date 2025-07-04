@@ -29,8 +29,6 @@ class PoolBased(BatchSelection):
         self.pred_batch_size = pred_batch_size
 
         ic_params = []
-        self.pde_params = []
-        self.pde_params_normed = []
 
         pattern = re.compile(r"jorek_run(\d+)\.h5")
 
@@ -61,21 +59,28 @@ class PoolBased(BatchSelection):
         print("Loaded", len(ic_params), "initial conditions from pool")
 
         self.ic = all_ics
-        self.ic_params = ic_params
+        self.ic_params = torch.tensor(ic_params)
         self.pool_mask = torch.ones((len(self.ic),), dtype=torch.bool)
         self.batch_size = batch_size
+        self.pde_params = torch.zeros(len(self.ic))
+        self.pde_params_normed = torch.zeros(len(self.ic))
 
     def prepare_data(self, train_loader):
         """ Prepares pool and train inputs."""
         pde_params = []
         ics = []
         for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(train_loader):
+            print("Batch", batch_idx, "of", len(train_loader), "with", len(xx), "samples")
+            print("Parameters:", param)
             pde_params.append(param)
             ics.append(xx)
         ics_train = torch.concat(ics, 0)
         pde_params_train = torch.concat(pde_params, 0)
         ic_pool = self.ic[self.pool_mask]
+        print("pde params ", self.pde_params)
         pde_params_pool = self.pde_params[self.pool_mask]
+        print("ic params ", self.ic_params)
+        print("pool mask ", self.pool_mask)
         if self.pde_params_normed is not None:
             ic_params_pool = self.ic_params[self.pool_mask]
             pde_params_normed_pool = self.pde_params_normed[self.pool_mask]
