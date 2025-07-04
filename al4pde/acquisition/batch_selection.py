@@ -82,19 +82,10 @@ class BatchSelection:
         with torch.no_grad():
             torch.cuda.empty_cache()
         t = time.time()
-        for i in range(int(np.ceil(float(len(ics)) / self.batch_size))):
-            ic_batch = ics[i * self.batch_size: (i + 1) * self.batch_size]
-            ic_params_batch = ic_params[i * self.batch_size: (i + 1) * self.batch_size]
-            pde_param_batch = pde_params[i * self.batch_size: (i + 1) * self.batch_size]
-            pde_params_normed_batch = pde_params_normed[i * self.batch_size: (i + 1) * self.batch_size]
+        for i in range(len(ic_params)):
+            run_index = ic_params[i]
+            self.task.save_trajectories(run_index, source_folder="pool")
 
-            u_trajectories, u_xcoords, u_tcoords = self.task.evolve_ic(ic_batch, pde_param_batch) #add ic params - ix
-
-            print(f"obtained trajectories shape: {u_trajectories.shape}")
-            # save generated trajectories
-            self.task.save_trajectories(u_trajectories, pde_param_batch,
-                                        u_xcoords, u_tcoords, al_iter, i, ic_params=ic_params_batch,
-                                        pde_params_normed=pde_params_normed_batch)
         wandb.log({"al/al_iter": al_iter, "al/sim_time": time.time() - t})
         print("simulation  time", time.time() - t)
 
