@@ -332,7 +332,7 @@ def end_of_al_iter_plots(task, prob_model, al_iter, last=False):
         if task.spatial_dim == 1:
             plot_initial_conditions(task, al_iter, 10)
 
-        plot_sampled_pde_params(task, al_iter)
+        #plot_sampled_pde_params(task, al_iter)
 
     try:
         unc_mse_traj_plots(task, prob_model, al_iter, prob_model.val_loader)
