@@ -30,7 +30,7 @@ class Simulator:
         if not torch.all(torch.isfinite((res[0]))):
             for i in range(len(res[0])):
                 if not torch.all(torch.isfinite((res[0][i]))):
-                    print("\n non-finite for", pde_params[i])
+                    #print("\n non-finite for", pde_params[i])
                     print(ic[i])
                     print(res[0][i])
             raise ValueError("non-finite values in simulator result")

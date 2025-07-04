@@ -247,25 +247,7 @@ class JOREKSim(Simulator):
 
 
     def n_step_sim(self, ic, ic_params):
-        """Load in JOREK run parametrised by ic
-
-            Args:
-                ic (int) - Initial condition.
-                ic_params (int) - Index of IC."""
-
-        #if n_steps > self.max_step:
-        #    raise ValueError("Number of steps must be less than " + str(self.max_step))
         
-        t_coord = jnp.array(self.get_t_coord(init_time, n_steps))
-        uu_tc = torch.from_numpy(np.array(t_coord))
-
-        path = get_jorek_file_path(self.data_path, ic_params)
-        path = os.path.join(self.data_path, f"jorek_run{run_str}.h5")
-        fields, gridx, gridy = JOREK_electrostatic_single(path)
-        grid = get_grid(self.pool_path, 1)
-
-        uu_traj = fields
-
-        return uu_traj, grid, uu_tc
+        raise NotImplementedError #Shouldn't be used, as we load in pre-simulated data 
 
 
