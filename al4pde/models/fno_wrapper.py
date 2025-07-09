@@ -168,6 +168,7 @@ class FNOWrapper(ModelWrapper):
 
         if self.norm_mode is not None:
             xx = self.task_norm.norm_traj(xx)
+            #print("Normalizing grid, device is " + str(grid.device))
             grid = self.task_norm.norm_grid(grid)
 
         #print("xx shape after norm:", xx.shape)
@@ -200,6 +201,8 @@ class FNOWrapper(ModelWrapper):
             else:
                 #print("xx shape passed to forward:", xx.shape)
                 #print("grid shape passed to forward:", grid.shape)
+                #print("xx data type:", xx.dtype)
+                #print("grid data type:", grid.dtype)
                 out = self.model(xx, grid)[..., :-pde_param.shape[-1]]
         else:
             if return_features:  # if statement because not everywhere implemented and normal call should still work

@@ -45,7 +45,7 @@ class PoolBased(BatchSelection):
         ic_dtype = first_ic.dtype
         ic_device = first_ic.device
 
-        all_ics = torch.empty((num_files, *ic_shape), dtype=ic_dtype, device=ic_device)
+        all_ics = torch.empty((num_files, *ic_shape[1:]), dtype=ic_dtype, device=ic_device)
 
         for idx, filename in enumerate(tqdm.tqdm(pool_files)):
 
@@ -70,20 +70,20 @@ class PoolBased(BatchSelection):
         pde_params = []
         ics = []
         for batch_idx, (xx, yy, grid, param, t_idx) in enumerate(train_loader):
-            print("Batch", batch_idx, "of", len(train_loader), "with", len(xx), "samples")
-            print("Parameters:", param)
+            #print("Batch", batch_idx, "of", len(train_loader), "with", len(xx), "samples")
+            #print("Parameters:", param)
             pde_params.append(param)
             ics.append(xx)
         ics_train = torch.concat(ics, 0)
         pde_params_train = torch.concat(pde_params, 0)
         ic_pool = self.ic[self.pool_mask]
-        print("pde params ", self.pde_params)
-        pde_params_pool = self.pde_params[self.pool_mask]
+        print("pde params shape", self.pde_params.shape)
+        pde_params_pool = self.pde_params[self.pool_mask].unsqueeze(-1)
         print("ic params ", self.ic_params)
         print("pool mask ", self.pool_mask)
         if self.pde_params_normed is not None:
             ic_params_pool = self.ic_params[self.pool_mask]
-            pde_params_normed_pool = self.pde_params_normed[self.pool_mask]
+            pde_params_normed_pool = self.pde_params_normed[self.pool_mask].unsqueeze(-1)
         else:
             ic_params_pool = None
             pde_params_normed_pool = None
@@ -100,7 +100,15 @@ class PoolBased(BatchSelection):
 
             (ics_train, pde_params_train, ic_pool, pde_params_pool, pde_params_normed_pool,
              ic_params_pool) = self.prepare_data(train_loader)
-
+            print("Shapes of inputs to select next:")
+            print("ics_train:", ics_train.shape)
+            print("pde_params_train:", pde_params_train.shape)
+            print("ic_pool:", ic_pool.shape)
+            print("pde_params_pool:", pde_params_pool.shape)
+            if pde_params_normed_pool is not None:
+                print("pde_params_normed_pool:", pde_params_normed_pool.shape)
+            if ic_params_pool is not None:
+                print("ic_params_pool:", ic_params_pool.shape)
             sel_idx = self.select_next(prob_model, ic_pool, pde_params_pool, ics_train, pde_params_train,
                                        self.task.get_grid()[0], al_iter, train_loader)
 

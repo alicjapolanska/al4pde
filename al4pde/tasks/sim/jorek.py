@@ -33,6 +33,7 @@ def get_grid(data_path, n):
         grid = grid.expand([n, ] + list(grid.shape)) 
         print("Grid shape ", grid.shape)
 
+    grid = grid.to(device)  # Move to device
     return grid    # [bs, nx, ny, ]
 
 

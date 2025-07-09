@@ -89,6 +89,11 @@ class Ensemble(ProbModel):
 
     def unc_roll_out(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
         if self.unc_roll_out_mode == "independent":
+            #print("Performing unc rollout")
+            #print(f"Inputs are on devices: xx={xx.device}, grid={grid.device}, pde_param={pde_param.device}")
+            #print("Inputs data types: "
+            #      f"xx={xx.dtype}, grid={grid.dtype}, pde_param={pde_param.dtype}, t_idx={t_idx.dtype}")
+
             return self.unc_independent_rollout(xx, grid, final_step, pde_param, t_idx, return_features)
         elif self.unc_roll_out_mode == "mean":
             if return_features:
@@ -112,6 +117,8 @@ class Ensemble(ProbModel):
         return m_outputs.mean(dim=0)
 
     def unc_independent_rollout(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
+        #print("Performing unc independent rollout")
+        #print(f"Inputs are on devices: xx={xx.device}, grid={grid.device}, pde_param={pde_param.device}")
         out = self._roll_out_all(xx, grid, final_step, pde_param, t_idx, return_features)
         traj = out if not return_features else out[0]
         mean_traj = torch.mean(traj, dim=0)
@@ -144,6 +151,10 @@ class Ensemble(ProbModel):
             plot_worst_traj(self, self.val_loader, img_save_path, "traj_" + str(total_epoch))
 
     def _roll_out_all(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
+        #print("Performing roll out all")
+        #print(f"Inputs data types: "
+        #      f"xx={xx.dtype}, grid={grid.dtype}, pde_param={pde_param.dtype}, t_idx={t_idx.dtype}")
+        #print(f"Inputs are on devices: xx={xx.device}, grid={grid.device}, pde_param={pde_param.device}")
         b_m_out = [b.roll_out(xx, grid, final_step, pde_param, t_idx, return_features) for b in self.base_models]
         if return_features:
             traj = torch.stack([o[0] for o in b_m_out], dim=0)

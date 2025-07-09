@@ -25,6 +25,14 @@ class ProbModel(Model):
             raise ValueError(self.training_type)
 
     def roll_out(self, xx, grid, final_step, pde_param=None, t_idx=None, return_features=False):
+        # Print the devices of the inputs
+        #print("Rolling out the model...")
+        #print(f"Input xx is on device: {xx.device}")
+        #print(f"Grid is on device: {grid.device}")
+        #if pde_param is not None:
+            #print(f"PDE parameters are on device: {pde_param.device}")
+        #if t_idx is not None:
+            #print(f"Time index is on device: {t_idx.device}")
         out = self.unc_roll_out(xx, grid, final_step, pde_param,  t_idx, return_features=return_features)
         return (out[0], out[2]) if return_features else out[0]
 

@@ -38,7 +38,7 @@ class ICGenJOREK(ICGenerator):
         fields, x, y = jorek.JOREK_electrostatic_single(file_path)
 
         # Extract first timestep
-        u = fields[..., 0, :]
+        u = fields[..., 0, :].unsqueeze(-2)  # [bs, nx, ny, 1, nc]
         
         return u   # [bs, nx, ny, 1, nc]
 

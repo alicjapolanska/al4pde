@@ -224,7 +224,9 @@ class ModelWrapper(Model):
                 else:
                     norm_update = min(total_norm, self.max_grad_norm)
                     self.max_grad_norm = 5 * (self.max_grad_norm / 5 * 0.95 + norm_update * 0.05)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                #torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0) #0.2
 
             self.optimizer.step()
             all_se = batch_errors(pred, yy, self.initial_step)

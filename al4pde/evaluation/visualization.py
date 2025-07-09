@@ -315,7 +315,7 @@ def end_of_al_iter_plots(task, prob_model, al_iter, last=False):
     with torch.no_grad():
         for idx, (xx_b, yy_b, grid_b, param_b, t_idx) in enumerate(prob_model.val_loader):
             np.save(os.path.join(task.img_save_path, "ex_params_" + str(al_iter) + ".npy"), param_b.numpy())
-            np.save(os.path.join(task.img_save_path, "ex_grid_" + str(al_iter) + ".npy"), grid_b.numpy())
+            np.save(os.path.join(task.img_save_path, "ex_grid_" + str(al_iter) + ".npy"), grid_b.cpu().numpy())
             np.save(os.path.join(task.img_save_path, "ex_gt_" + str(al_iter) + ".npy"), yy_b)
             pred, unc = prob_model.unc_roll_out(xx_b.to(device), grid_b.to(device), yy_b.shape[-2],
                                                 pde_param=param_b.to(device), t_idx=t_idx)

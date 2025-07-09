@@ -89,6 +89,7 @@ class Model(nn.Module):
                 im, features_t = self(xx, grid, param, t_idx + t - self.initial_step, return_features)
                 features.append(features_t)
             else:
+                #print(f"Input shapes - xx: {xx.shape}, grid: {grid.shape}, param: {param.shape if param is not None else None}, t_idx: {t_idx.shape if t_idx is not None else None}")
                 im = self(xx, grid, param, t_idx + t - self.initial_step, return_features)
             _batch = xx.size(0)
             pred = torch.cat((pred, im), -2)

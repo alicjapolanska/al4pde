@@ -41,9 +41,12 @@ class UncertaintyBased(PoolBased):
             loader = DataLoader(dataset, batch_size=self.pred_batch_size)
             grid = grid.to(device)
             for i, batch in enumerate(loader):
-                ic = batch[0].to(device)
+                ic = batch[0].to(device, dtype=torch.float32)
+                #print("Data type of ic:", ic.dtype)
                 pde_param = batch[1].to(device)
                 grid_batch = grid.expand([len(ic), ] + list(grid.shape))
+                #print("Before model_uncertainty call:")
+                #print(f"Data types - ic: {ic.dtype}, pde_param: {pde_param.dtype}, grid_batch: {grid_batch.dtype}")
                 unc_batch = self.model_uncertainty(prob_model, ic, grid_batch, pde_param).detach().cpu()
                 unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
             unc = torch.concat(unc, dim=0)

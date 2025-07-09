@@ -68,7 +68,7 @@ class BatchSelection:
                 return unc.reshape([unc.shape[0], -1]).max(dim=1)[0]
 
             elif self.unc_eval_mode == "mean":
-                x, grid = prob_model.reduce_input_res(x, grid)
+                x, grid = prob_model.reduce_input_res(x, grid) #remove reducing resolution?
                 _, unc = prob_model.unc_roll_out(x, grid, self.unc_num_rollout_steps, pde_param=pde_params, t_idx=t_idx)
                 return unc.reshape([unc.shape[0], -1]).mean(dim=1)
 

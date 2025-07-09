@@ -8,9 +8,9 @@ def _get_stats(train_loader, idx):
     n = len(train_loader.sampler)
     mean_channels = 0
     for batch in train_loader:
-        print("batch length getting stats", len(batch))
-        for b in batch:
-            print("batch shape", b.shape)
+        #print("batch length getting stats", len(batch))
+        #for b in batch:
+            #print("batch shape", b.shape)
         b = batch[idx]
         mean_channels += b.flatten(0, -2).mean(0) * len(b) / n
 
@@ -23,6 +23,7 @@ def _get_stats(train_loader, idx):
 
 
 def _norm(x, mean, std):
+    #print(f"Mean device: {mean.device}, Std device: {std.device}, Input device: {x.device}")
     return (x - mean) / std
 
 
@@ -47,6 +48,9 @@ class TaskNormalizer(torch.nn.Module):
             with torch.no_grad():
                 self.mean_channels.data, self.std_channels.data = _get_stats(train_loader, 1)
                 self.mean_grid_coord.data, self.std_grid_coord.data = _get_stats(train_loader, 2)
+                print(f"Mean Channels Device: {self.mean_channels.device}, Std Channels Device: {self.std_channels.device}")
+                print(f"Mean Grid Coord Device: {self.mean_grid_coord.device}, Std Grid Coord Device: {self.std_grid_coord.device}")
+                print(f"Mean Parameters Device: {self.mean_parameters.device}, Std Parameters Device: {self.std_parameters.device}")
                 #self.mean_parameters.data, self.std_parameters.data = _get_stats(train_loader, 3)
                 # Save normalization statistics to a text file
                 with open("normalization_stats.txt", "w") as f:
@@ -67,6 +71,8 @@ class TaskNormalizer(torch.nn.Module):
         return _norm(pde_param, self.mean_parameters, self.std_parameters)
 
     def norm_grid(self, grid: Tensor):
+        #print(f"Normalizing grid, device is {grid.device}")
+        #print(f"Mean grid device: {self.mean_grid_coord.device}, Std grid device: {self.std_grid_coord.device}")
         return _norm(grid, self.mean_grid_coord, self.std_grid_coord)
 
     def denorm_traj(self, yy: Tensor):

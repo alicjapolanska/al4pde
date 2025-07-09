@@ -118,12 +118,16 @@ class DistancePoolBased(PoolBased):
         features = []
 
         for i, batch in enumerate(data_loader):
-            x = batch[0].to(device)
+            x = batch[0].to(device, dtype=torch.float32)
             pde_param = batch[-1].to(device)
+            if pde_param.dim() == 1:  # If pde_param is 1D, add a single dimension
+                pde_param = pde_param.unsqueeze(-1)
             grid_b = self.task.get_grid(len(x))
-            grid_b = subsample_grid(grid_b, self.task.reduced_resolution)
-            x = subsample_trajectory(x, self.task.reduced_resolution, self.task.reduced_resolution_t)
+            #grid_b = subsample_grid(grid_b, self.task.reduced_resolution)
+            #x = subsample_trajectory(x, self.task.reduced_resolution, self.task.reduced_resolution_t)
             t_idx = torch.zeros([len(x)], device=device)
+            #print(f"x shape: {x.shape}, grid_b shape: {grid_b.shape}, pde_param shape: {pde_param.shape}, t_idx shape: {t_idx.shape}")
+            #print(f"x dtype: {x.dtype}, grid_b dtype: {grid_b.dtype}, pde_param dtype: {pde_param.dtype}, t_idx dtype: {t_idx.dtype}")
             out = prob_model.roll_out(x, grid_b, self.num_rollout_steps, pde_param, t_idx=t_idx,
                                       return_features=self.use_latent_space)
             if self.use_latent_space:
