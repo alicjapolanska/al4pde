@@ -19,3 +19,8 @@ param_gen:
 sim:
   _target_: al4pde.tasks.sim.jorek.JOREKSim
   pool_path: "/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool"
+
+data_gen:
+  num_test_batches: 60
+  num_initial_batches: 57 #Should be the same as the number of runs in initial 
+  batch_size: 1
