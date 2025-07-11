@@ -135,7 +135,7 @@ class NPYDataset(TrajDataset):
         _pde_par = torch.zeros((_data.shape[0], 1))  # JOREK has no pde params
         grid = jorek.get_grid(folders, 0)
         print("data shape:", _data.shape)
-        _data = _data[..., ::2, :]
+        _data = _data[..., :, :]
         super().__init__(_data, _pde_par, grid, initial_step)
 
         print("data shape:", _data.shape)
