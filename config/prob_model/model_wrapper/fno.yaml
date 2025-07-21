@@ -10,7 +10,7 @@ add_one_step: false
 
 optimizer:
   _target_: torch.optim.Adam
-  lr: 1.e-3
+  lr: 1.e-5
   weight_decay: 0.0
 
 
