@@ -238,13 +238,13 @@ class JOREKSim(Simulator):
         (Zenodo 10.5281/zenodo.11099659) to use for active learning experiments."""
 
     def __init__(self, pool_path):
-        dt = 1.5e-6 #1.5 microseconds
+        dt = 2*1.5e-6 #1.5 microseconds take every other
         ini_time = 0
-        fin_time = dt*200 #double check if not 200
+        fin_time = dt*100 #double check if not 200
         channel_names=["rho", "phi", "T"]
         super().__init__(pde_name="jorek", num_pde_params=1, spatial_dim=2, num_channels=3, dt=dt, ini_time=ini_time, fin_time=fin_time, channel_names=channel_names)
         self.pool_path = pool_path
-        self.max_step = 200
+        self.max_step = 100
 
 
     def n_step_sim(self, ic, ic_params):
