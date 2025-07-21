@@ -84,7 +84,6 @@ class TrajDataset(Dataset):
         return self.data.shape[0]
 
     def __getitem__(self, idx):
-        #print("getting item: ", idx)
         ic = self.data[idx, ..., 0, :].unsqueeze(-2)
         #print("ic shape getting item: ", ic.shape)
         traj = self.data[idx, ...]
@@ -95,7 +94,7 @@ class TrajDataset(Dataset):
         assert pde_params.numel() > 0, f"Empty pde_params at idx {idx}!"
         assert not torch.isnan(pde_params).any(), f"NaN in pde_params at idx {idx}!"
 
-        return ic, traj, self.grid, pde_params, self.t[idx]
+        return ic, traj, self.grid, pde_params, self.t[0]
 
     def set_num_steps(self, num_steps):
         return TrajDataset(self.data, self.pde_params, self.grid, self.initial_step, num_steps)
@@ -135,7 +134,7 @@ class NPYDataset(TrajDataset):
         _pde_par = torch.zeros((_data.shape[0], 1))  # JOREK has no pde params
         grid = jorek.get_grid(folders, 0)
         print("data shape:", _data.shape)
-        _data = _data[..., :, :]
+        _data = _data[..., ::2, :]
         super().__init__(_data, _pde_par, grid, initial_step)
 
         print("data shape:", _data.shape)
