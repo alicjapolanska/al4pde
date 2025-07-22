@@ -4,6 +4,7 @@ from torch.utils.data import TensorDataset, DataLoader
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from al4pde.acquisition.pool_based import PoolBased
 from al4pde.prob_models.prob_model import ProbModel
+from al4pde.prob_models.PRE_model import PREModel
 import os
 
 
@@ -39,7 +40,7 @@ class UncertaintyBased(PoolBased):
 
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
-                    train_loader=None) -> torch.Tensor:
+                    train_loader=None, k=1) -> torch.Tensor:
 
         save_path = os.path.join(self.task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
 
@@ -57,6 +58,30 @@ class UncertaintyBased(PoolBased):
         unc = torch.concat(unc, dim=0)
 
         torch.save(unc, save_path)
+
+        if isinstance(prob_model, PREModel):
+            # Collect mean PRE residuals for each training trajectory
+            train_residuals = []
+            for xx, yy, grid, param, t_idx in train_loader:
+                res = prob_model.PREModel.residual(yy.to(device), param.to(device)).detach().cpu()
+                # Mean over space and time for each trajectory in batch
+                res_mean = res.reshape(res.shape[0], -1).abs().mean(1)
+                train_residuals.append(res_mean)
+            train_residuals = torch.cat(train_residuals, dim=0)  # shape: [num_train]
+
+            # Now, for each pool sample, find kNN in param space and normalize
+            pde_param_pool = pde_param_pool.to(device)
+            pde_param_train = pde_param_train.to(device)
+            distances = torch.cdist(pde_param_pool, pde_param_train)
+            knn_indices = torch.topk(distances, k, dim=1, largest=False).indices
+
+            knn_unc_means = torch.stack([train_residuals[indices].mean() for indices in knn_indices])
+
+            unc = unc / knn_unc_means
+
+            del train_residuals, knn_unc_means
+            torch.cuda.empty_cache()
+
 
         n_samples = self.num_batches(al_iter) * self.batch_size
         if self.selection_mode == "top_k":
