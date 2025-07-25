@@ -57,30 +57,33 @@ class UncertaintyBased(PoolBased):
             unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
         unc = torch.concat(unc, dim=0)
 
-        torch.save(unc, save_path)
-
         if isinstance(prob_model, PREModel):
-            # Collect mean PRE residuals for each training trajectory
-            train_residuals = []
-            for xx, yy, grid, param, t_idx in train_loader:
-                res = prob_model.PREModel.residual(yy.to(device), param.to(device)).detach().cpu()
-                # Mean over space and time for each trajectory in batch
-                res_mean = res.reshape(res.shape[0], -1).abs().mean(1)
-                train_residuals.append(res_mean)
-            train_residuals = torch.cat(train_residuals, dim=0)  # shape: [num_train]
 
-            # Now, for each pool sample, find kNN in param space and normalize
             pde_param_pool = pde_param_pool.to(device)
-            pde_param_train = pde_param_train.to(device)
+            pde_param_train = train_loader.dataset.pde_params.to(device)
             distances = torch.cdist(pde_param_pool, pde_param_train)
             knn_indices = torch.topk(distances, k, dim=1, largest=False).indices
 
-            knn_unc_means = torch.stack([train_residuals[indices].mean() for indices in knn_indices])
+            train_trajectories = train_loader.dataset.data
+            
+            knn_unc_means = []
+            for indices in knn_indices:
+                yy_knn = train_trajectories[indices.cpu()].to(device)
+                param_knn = pde_param_train[indices.cpu()].to(device)
+                res = prob_model.residual(yy_knn, param_knn)
+                res_mean = res.reshape(res.shape[0], -1).abs().mean(1).mean()  # mean over batch, space, time
+                knn_unc_means.append(res_mean)
+            knn_unc_means = torch.stack(knn_unc_means).cpu()  # shape: [num_pool]
 
+            del train_trajectories
+
+            print("knn_unc_means device", knn_unc_means.device)
+            print("unc device", unc.device)
             unc = unc / knn_unc_means
 
-            del train_residuals, knn_unc_means
-            torch.cuda.empty_cache()
+            del knn_unc_means
+
+        torch.save(unc, save_path)
 
 
         n_samples = self.num_batches(al_iter) * self.batch_size
