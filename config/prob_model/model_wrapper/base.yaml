@@ -1,4 +1,4 @@
-batch_size: 16
+batch_size: 25
 num_workers: 0
 val_period: 20
 vis_period: 1000

@@ -10,13 +10,13 @@ add_one_step: false
 
 optimizer:
   _target_: torch.optim.Adam
-  lr: 1.e-5
-  weight_decay: 0.0
+  lr: 5.e-4
+  weight_decay: 1e-5
 
 
 model:
   if_conditional: true
   num_channels: 1
-  modes: 20
+  modes: 32
   width: 64
   predict_delta: true
