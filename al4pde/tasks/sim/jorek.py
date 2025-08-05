@@ -148,9 +148,9 @@ def JOREK_electrostatic(data_loc: str) -> Tuple[torch.Tensor, torch.Tensor, torc
             x = np.asarray(Rgrid, dtype=np.float32)
             y = np.asarray(Zgrid, dtype=np.float32)
 
-    rho = np.asarray(rho_array)*10**-(20)
-    phi = np.asarray(phi_array)
-    T = np.asarray(T_array)
+    rho = np.asarray(rho_array)*10**(-20)
+    phi = np.asarray(phi_array)/ 1e5
+    T = np.asarray(T_array)/ 1e6
 
     print("Concatenating...")
     fields = stacked_fields([rho, phi, T])
