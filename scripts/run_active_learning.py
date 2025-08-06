@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append('/leonardo/home/userexternal/apolansk/codes/pdearena')
+sys.path.append('/pitagora_work/FUPA1_UKAEA_ML/apolansk/pdearena')
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import shutil
 import hydra
