@@ -13,8 +13,8 @@ test_pct    = 0.15  # 15% to test
 # 60% will remain in pool
 
 # === PATHS ===
-pool_dir = Path("/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool")
-target_base = Path("/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek")
+pool_dir = Path("/pitagora_work/FUPA1_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool")
+target_base = Path("/pitagora_work/FUPA1_UKAEA_ML/apolansk/al4pde/data/data/jorek")
 
 # === Setup ===
 for subset in ['initial', 'val', 'test']:

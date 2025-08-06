@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Directory where your tar files live
-tar_dir="/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/tars"
+tar_dir="/pitagora_work/FUPA1_UKAEA_ML/apolansk/al4pde/data/data/jorek/tars"
 # Pool directory
-pool_dir="/leonardo_work/FUAL8_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool"
+pool_dir="/pitagora_work/FUPA1_UKAEA_ML/apolansk/al4pde/data/data/jorek/pool"
 
 
 # Loop through all tar files
