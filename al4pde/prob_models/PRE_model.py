@@ -131,13 +131,13 @@ class PREModel(ProbModel):
             # ce_residual = D_t(u) + alpha*D_x(u**2) - beta*D_xx(u) + gamma*D_xxx(u) 
             ce_residual = D_t(uu)*2*dx**3 + alpha*D_x(uu**2)*2*dt*dx**2 - beta*D_xx(uu)*4*dt*dx + gamma*D_xxx(uu)*4*dt
 
-            print("Residual shape ", ce_residual.shape)
+            #print("Residual shape ", ce_residual.shape)
 
             if boundary:
                 return ce_residual.permute(0, 2, 1).unsqueeze(-1)
             else: 
                 ce_residual = ce_residual[...,1:-1,1:-1].permute(0, 2, 1).unsqueeze(-1)
-                print("Residual shape after permuting ", ce_residual.shape)
+                #print("Residual shape after permuting ", ce_residual.shape)
                 return ce_residual
             
             
