@@ -4,6 +4,7 @@ from torch.utils.data import TensorDataset, DataLoader
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from al4pde.acquisition.pool_based import PoolBased
 from al4pde.prob_models.prob_model import ProbModel
+from al4pde.prob_models.PRE_model import PREModel
 import os
 
 
@@ -39,7 +40,7 @@ class UncertaintyBased(PoolBased):
 
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
-                    train_loader=None) -> torch.Tensor:
+                    train_loader=None, k=1) -> torch.Tensor:
 
         save_path = os.path.join(self.task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
 
@@ -56,7 +57,34 @@ class UncertaintyBased(PoolBased):
             unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
         unc = torch.concat(unc, dim=0)
 
+        if isinstance(prob_model, PREModel):
+
+            pde_param_pool = pde_param_pool.to(device)
+            pde_param_train = train_loader.dataset.pde_params.to(device)
+            distances = torch.cdist(pde_param_pool, pde_param_train)
+            knn_indices = torch.topk(distances, k, dim=1, largest=False).indices
+
+            train_trajectories = train_loader.dataset.data
+            
+            knn_unc_means = []
+            for indices in knn_indices:
+                yy_knn = train_trajectories[indices.cpu()].to(device)
+                param_knn = pde_param_train[indices.cpu()].to(device)
+                res = prob_model.residual(yy_knn, param_knn)
+                res_mean = res.reshape(res.shape[0], -1).abs().mean(1).mean()  # mean over batch, space, time
+                knn_unc_means.append(res_mean)
+            knn_unc_means = torch.stack(knn_unc_means).cpu()  # shape: [num_pool]
+
+            del train_trajectories
+
+            print("knn_unc_means device", knn_unc_means.device)
+            print("unc device", unc.device)
+            unc = unc / knn_unc_means
+
+            del knn_unc_means
+
         torch.save(unc, save_path)
+
 
         n_samples = self.num_batches(al_iter) * self.batch_size
         if self.selection_mode == "top_k":
