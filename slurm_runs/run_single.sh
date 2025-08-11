@@ -1,19 +1,20 @@
 #!/bin/bash
-#SBATCH --nodes=1                    # 1 node
-#SBATCH --ntasks-per-node=1         # 1 tasks per node
-#SBATCH --account=FUPA1_UKAEA_ML      # account name
-#SBATCH --partition=gpu # partition name
-#SBATCH --gres=gpu:1
+#SBATCH -p GPU #requesting one node
+#SBATCH -N1 #requesting 12 cpus
+#SBATCH -n12 #requesting 1 V100 GPU
+#SBATCH --gres=gpu:v100:1
 #SBATCH --mail-user=alicja.polanska.22@ucl.ac.uk
 #SBATCH --mail-type=ALL
-#SBATCH --time=1-00:00:00  # 1 day and 12 hours
 
-echo "Activating environment"
-source ~/venvs/al4pde/bin/activate
+source /share/apps/anaconda/3-2022.05/etc/profile.d/conda.sh
+conda activate al4pde
+
 echo "Python is "
 which python
+echo "Visible devices"
+echo $CUDA_VISIBLE_DEVICES
 
-cd /pitagora_work/FUPA1_UKAEA_ML/apolansk/al4pde
+cd /home/alicjaap/al4pde
 
 echo "Running acquisition=$ACQ seed=$SEED"
 

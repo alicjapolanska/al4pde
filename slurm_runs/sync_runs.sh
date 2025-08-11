@@ -3,11 +3,12 @@
 set -e
 
 # Seeds and acquisition strategies
-seeds=(5 10 15 20 25)
-acquisitions=("pool_random" "lcmd" "top_k" "second_top_k")
+seeds=(6 11 16 21 26)
+acquisitions=("pool_random" "lcmd" "top_k")
 
-# Output log directory
+# Output log directories
 out_dir="out_logs"
+err_dir="err_logs"
 
 # Associative array to collect run IDs
 declare -A acq_to_ids
@@ -21,7 +22,8 @@ for acq in "${acquisitions[@]}"; do
     acq_to_ids["$acq"]=""
 
     for seed in "${seeds[@]}"; do
-        out_file="${out_dir}/burgers_${acq}_seed${seed}.out"
+        out_file="${out_dir}/burgers_${acq}_seed${seed}_k3.out"
+        err_file="${err_dir}/burgers_${acq}_seed${seed}_k3.err"
 
         if [[ ! -f "$out_file" ]]; then
             echo "  ❌ Seed $seed: Output file not found."
@@ -29,8 +31,13 @@ for acq in "${acquisitions[@]}"; do
         fi
 
         if grep -q "Done with active learning experiment." "$out_file"; then
-            # Strip ANSI escape codes before parsing
-            sync_line=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' "$out_file" | grep "wandb sync")
+            if [[ ! -f "$err_file" ]]; then
+                echo "  ⚠️  Seed $seed: No corresponding .err file found."
+                continue
+            fi
+
+            # Strip ANSI escape codes before parsing .err
+            sync_line=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' "$err_file" | grep "wandb sync")
             sync_path=$(echo "$sync_line" | awk '{print $4}')
             run_id=$(basename "$sync_path" | awk -F'-' '{print $NF}')
             echo "  ✅ Seed $seed: Success (Run ID: $run_id)"
