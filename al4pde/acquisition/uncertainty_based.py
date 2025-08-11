@@ -40,7 +40,7 @@ class UncertaintyBased(PoolBased):
 
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
-                    train_loader=None, k=1) -> torch.Tensor:
+                    train_loader=None, k=3) -> torch.Tensor:
 
         save_path = os.path.join(self.task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
 
