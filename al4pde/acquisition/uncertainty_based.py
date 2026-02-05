@@ -40,7 +40,7 @@ class UncertaintyBased(PoolBased):
 
     def select_next(self, prob_model: ProbModel, ic_pool: torch.Tensor, pde_param_pool: torch.Tensor,
                     ic_train: torch.Tensor, pde_param_train: torch.Tensor, grid: torch.Tensor, al_iter: int,
-                    train_loader=None, k=3) -> torch.Tensor:
+                    train_loader=None, k=1) -> torch.Tensor:
 
         save_path = os.path.join(self.task.traj_save_path, "unc_pool" + str(al_iter) + ".pt")
 
@@ -57,7 +57,9 @@ class UncertaintyBased(PoolBased):
             unc.append(unc_batch.reshape((len(unc_batch), -1)).mean(1))
         unc = torch.concat(unc, dim=0)
 
-        if isinstance(prob_model, PREModel):
+        print("No norm PRE with viscosity scaling")
+
+        if isinstance(prob_model, PREModel) and False:
 
             pde_param_pool = pde_param_pool.to(device)
             pde_param_train = train_loader.dataset.pde_params.to(device)
