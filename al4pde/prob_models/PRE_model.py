@@ -95,6 +95,22 @@ class PREModel(ProbModel):
 
             eta = pde_param[:,0].view(-1, 1, 1, 1)
             zeta = pde_param[:,1].view(-1, 1, 1, 1)
+
+
+            # 1. Look at the initial time step (nt = 0)
+            u0 = u[:, 0, :, :]
+            v0 = v[:, 0, :, :]
+
+            # 2. Calculate the "Amplitude" (Max - Min)
+            # We take the max/min over the spatial dimensions (nx, ny)
+            u_max = u0.reshape(u0.shape[0], -1).max(dim=1).values
+            u_min = u0.reshape(u0.shape[0], -1).min(dim=1).values
+            v_max = v0.reshape(v0.shape[0], -1).max(dim=1).values
+            v_min = v0.reshape(v0.shape[0], -1).min(dim=1).values
+
+            # Use the largest range between u and v as your characteristic U
+            U_amp = torch.max(u_max - u_min, v_max - v_min)
+            U_amp = U_amp.view(-1, 1, 1, 1) # Reshape for broadcasting (bs, 1, 1, 1)
             
             # mass_residual = self.D_t(rho)*self.dx*self.dy + rho*(self.D_x(u) + self.D_y(v))*self.dt*self.dx + u*self.D_x(rho)*self.dx*self.dt + v*self.D_y(rho)*self.dy*self.dt
 
@@ -104,7 +120,11 @@ class PREModel(ProbModel):
             mom_res_x = rho*(D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx) + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*dt
             mom_res_y = rho*(D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx) + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*dt
 
-            mom_residuals = (mom_res_x + mom_res_y) * eta
+            # 3. Apply the scaling
+            scaling_factor = (eta * (U_amp))**(-1)
+
+            mom_residuals = (mom_res_x + mom_res_y) * scaling_factor
+            
 
             # residual = mass_residual + mom_residuals
 
