@@ -50,6 +50,12 @@ class PREModel(ProbModel):
             uu = uu.squeeze(-1) #last dimension is just one channel, squeeze out
             uu = uu.permute(0, 2, 1) #permute for correct PRE computation
             #print("Field shape after permuting ", uu.shape)
+            u0 = uu[:, 0, :]          # u(x, t=0)
+            u_max = u0.max(dim=1).values
+            u_min = u0.min(dim=1).values
+            Delta_u = u_max - u_min  # (bs,)
+            Delta_u = Delta_u.view(-1, 1, 1)
+
 
             #Defining the required Convolutional Operations. 
             D_t = ConvOps_1d.ConvOperator(domain='t', order=1, device=device, conv = 'spectral')
@@ -57,7 +63,9 @@ class PREModel(ProbModel):
             D_xx = ConvOps_1d.ConvOperator(domain='x', order=2, device=device, conv = 'spectral')
 
             res = dx*D_t(uu) + dt * uu * D_x(uu) - nu / np.pi * D_xx(uu) * (2*dt/dx)
-            #print("Residual shape ", res.shape)
+            print("Residual shape ", res.shape)
+            res = res * nu/Delta_u
+            print("Scaled residual shape")
 
             if boundary:
                 return res.permute(0, 2, 1).unsqueeze(-1)
@@ -96,7 +104,7 @@ class PREModel(ProbModel):
             mom_res_x = rho*(D_t(u)*2*dx**2 + u*D_x(u)*2*dt*dx + v*D_y(u)*2*dt*dx) + D_x(p)*2*dt*dx - eta*D_xx_yy(u)*4*dt - (zeta+eta/3)*(D_x(D_x(u) + D_y(v)))*dt
             mom_res_y = rho*(D_t(v)*2*dx**2 + u*D_x(v)*2*dt*dx + v*D_y(v)*2*dt*dx) + D_y(p)*2*dt*dx - eta*D_xx_yy(v)*4*dt - (zeta+eta/3)*(D_y(D_x(u) + D_y(v)))*dt
 
-            mom_residuals = mom_res_x + mom_res_y
+            mom_residuals = (mom_res_x + mom_res_y) * eta
 
             # residual = mass_residual + mom_residuals
 
@@ -201,17 +209,13 @@ class PREModel(ProbModel):
         return total_time
         
     def unc_roll_out(self, xx, grid, final_step,  pde_param=None, t_idx=None, return_features=False):
-
-        if self.training_type in ['autoregressive', 'teacher_forcing']:
         
-            pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
-            #pred = self.model.task_norm.denorm_traj(pred)
-            unc = torch.abs(self.residual(pred, pde_param))
+        pred = self.model.roll_out(xx, grid, final_step, pde_param, t_idx, return_features)
+        #pred = self.model.task_norm.denorm_traj(pred)
+        unc = torch.abs(self.residual(pred, pde_param))
 
-            return pred, unc
+        return pred, unc
 
-        else:
-            raise ValueError(self.training_type)
 
     def forward(self, xx, grid, pde_param=None, t_idx=None):
         return self.model(xx, grid, pde_param, t_idx)
