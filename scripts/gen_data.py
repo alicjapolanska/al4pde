@@ -6,13 +6,19 @@ wandb.init(mode="offline")
 
 def generate_data(task, path, num_batches, al_iter_id, batch_size):
     os.makedirs(path, exist_ok=True)
+    print(f"Generating data for {task.pde_name} at {path} with {num_batches} batches of size {batch_size}")
     for idx in range(num_batches):
         print(f"\ngenerating  batch {idx + 1}")
         ic_params = task.get_ic_params(batch_size)
+        print("Done with ic_params", flush=True)
         pde_params_normed = task.get_pde_params_normed(batch_size)
+        print("Done with pde_params_normed", flush=True)
         pde_params = task.get_pde_params(pde_params_normed)
+        print("Done with pde_params", flush=True)
         ic = task.get_ic(ic_params, pde_params)
+        print("Done with ic", flush=True)
         u_trajectories, u_grid_coords, u_tcoords = task.evolve_ic(ic, pde_params)
+        print("Done evolving ic", flush=True)
         task.save_trajectories(u_trajectories, pde_params, u_grid_coords, u_tcoords, al_iter_id, idx, save_path=path,
                                ic_params=ic_params, pde_params_normed=pde_params_normed)
 
